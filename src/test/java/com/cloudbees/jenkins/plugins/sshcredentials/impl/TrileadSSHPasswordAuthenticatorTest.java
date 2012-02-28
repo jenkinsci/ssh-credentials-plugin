@@ -71,7 +71,7 @@ public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
         });
         TrileadSSHPasswordAuthenticator instance =
                 new TrileadSSHPasswordAuthenticator(connection, new BasicSSHUserPassword(CredentialsScope.SYSTEM,
-                        "....",  // <---- put your username here
+                        null, "....",  // <---- put your username here
                         "....",  // <---- put your password here
                         null));
         assertThat(instance.canAuthenticate(), is(true));
@@ -81,7 +81,7 @@ public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
 
     protected void setUp() throws Exception {
         super.setUp();
-        user = new BasicSSHUserPassword(CredentialsScope.SYSTEM, "foobar", "foomanchu", null);
+        user = new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, "foobar", "foomanchu", null);
     }
 
     public void testPassword() throws Exception {

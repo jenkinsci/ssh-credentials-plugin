@@ -43,4 +43,10 @@ public interface SSHUser extends Credentials {
      * @return The display description of this credential.
      */
     String getDescription();
+
+    /**
+     * Returns a unique Id that can be used to find this user record again.
+     * @return a unique Id that can be used to find this user record again.
+     */
+    String getId();
 }

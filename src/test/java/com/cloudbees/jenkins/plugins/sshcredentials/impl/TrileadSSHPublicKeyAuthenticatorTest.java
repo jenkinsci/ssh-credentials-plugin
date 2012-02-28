@@ -76,6 +76,10 @@ public class TrileadSSHPublicKeyAuthenticatorTest extends HudsonTestCase {
                 return null;
             }
 
+            public String getId() {
+                return null;  //To change body of implemented methods use File | Settings | File Templates.
+            }
+
             public CredentialsScope getScope() {
                 return CredentialsScope.SYSTEM;
             }

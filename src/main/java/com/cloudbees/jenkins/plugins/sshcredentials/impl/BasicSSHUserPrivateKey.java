@@ -24,7 +24,6 @@
 package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
-import com.cloudbees.plugins.credentials.BaseCredentials;
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -37,7 +36,6 @@ import hudson.model.Hudson;
 import hudson.remoting.VirtualChannel;
 import hudson.util.Secret;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.putty.PuTTYKey;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -52,17 +50,12 @@ import java.util.logging.Logger;
 /**
  * A simple username / password for use with SSH connections.
  */
-public class BasicSSHUserPrivateKey extends BaseCredentials implements SSHUserPrivateKey {
+public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivateKey {
 
     /**
-     * The description.
+     * Ensure consistent serialization.
      */
-    private final String description;
-
-    /**
-     * The username.
-     */
-    private final String username;
+    private static final long serialVersionUID = 1L;
 
     /**
      * The password.
@@ -84,17 +77,15 @@ public class BasicSSHUserPrivateKey extends BaseCredentials implements SSHUserPr
      *
      * @param scope            the credentials scope
      * @param username         the username.
+     * @param privateKeySource the private key.
      * @param passphrase       the password.
      * @param description      the description.
-     * @param privateKeySource the private key.
      */
     @DataBoundConstructor
-    public BasicSSHUserPrivateKey(CredentialsScope scope, String username, PrivateKeySource privateKeySource,
+    public BasicSSHUserPrivateKey(CredentialsScope scope, String id, String username, PrivateKeySource privateKeySource,
                                   String passphrase,
                                   String description) {
-        super(scope);
-        this.username = username;
-        this.description = description;
+        super(scope, id, username, description);
         this.privateKeySource = privateKeySource;
         this.passphrase = Secret.fromString(passphrase);
     }
@@ -139,22 +130,6 @@ public class BasicSSHUserPrivateKey extends BaseCredentials implements SSHUserPr
     /**
      * {@inheritDoc}
      */
-    @NonNull
-    public String getUsername() {
-        return StringUtils.isEmpty(username) ? System.getProperty("user.name") : username;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @NonNull
-    public String getDescription() {
-        return StringUtils.isNotEmpty(description) ? description : "";
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Extension
     public static class DescriptorImpl extends CredentialsDescriptor {
 
@@ -171,7 +146,9 @@ public class BasicSSHUserPrivateKey extends BaseCredentials implements SSHUserPr
         }
 
         public BasicSSHUserPrivateKey fixInstance(BasicSSHUserPrivateKey instance) {
-            return instance == null ? new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "", new DirectEntryPrivateKeySource(""), "", "") : instance;
+            return instance == null ? new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, null, "", new DirectEntryPrivateKeySource(""), "",
+
+                    "") : instance;
         }
     }
 
@@ -197,6 +174,11 @@ public class BasicSSHUserPrivateKey extends BaseCredentials implements SSHUserPr
      * Let the user enter the key directly via copy & paste
      */
     public static class DirectEntryPrivateKeySource extends PrivateKeySource {
+        /**
+         * Ensure consistent serialization.
+         */
+        private static final long serialVersionUID = 1L;
+
         private final String privateKey;
 
         @DataBoundConstructor
@@ -233,6 +215,11 @@ public class BasicSSHUserPrivateKey extends BaseCredentials implements SSHUserPr
      * Let the user reference a file on the disk.
      */
     public static class FileOnMasterPrivateKeySource extends PrivateKeySource {
+        /**
+         * Ensure consistent serialization.
+         */
+        private static final long serialVersionUID = 1L;
+
         private final String privateKeyFile;
 
         @DataBoundConstructor
@@ -287,6 +274,10 @@ public class BasicSSHUserPrivateKey extends BaseCredentials implements SSHUserPr
      * Let the user
      */
     public static class UsersPrivateKeySource extends PrivateKeySource {
+        /**
+         * Ensure consistent serialization.
+         */
+        private static final long serialVersionUID = 1L;
 
         @DataBoundConstructor
         public UsersPrivateKeySource() {
@@ -325,6 +316,10 @@ public class BasicSSHUserPrivateKey extends BaseCredentials implements SSHUserPr
     }
 
     public static class ReadFileOnMaster implements FilePath.FileCallable<String> {
+        /**
+         * Ensure consistent serialization.
+         */
+        private static final long serialVersionUID = 1L;
 
         private final String path;
 
@@ -342,6 +337,11 @@ public class BasicSSHUserPrivateKey extends BaseCredentials implements SSHUserPr
     }
 
     public static class ReadKeyOnMaster implements FilePath.FileCallable<String> {
+
+        /**
+         * Ensure consistent serialization.
+         */
+        private static final long serialVersionUID = 1L;
 
         public String invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
             File sshHome = new File(new File(System.getProperty("user.home")), ".ssh");

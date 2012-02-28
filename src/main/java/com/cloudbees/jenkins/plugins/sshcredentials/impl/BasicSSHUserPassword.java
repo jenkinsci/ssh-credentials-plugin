@@ -24,29 +24,22 @@
 package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPassword;
-import com.cloudbees.plugins.credentials.BaseCredentials;
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
 import hudson.util.Secret;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * A simple username / password for use with SSH connections.
  */
-public class BasicSSHUserPassword extends BaseCredentials implements SSHUserPassword {
+public class BasicSSHUserPassword extends BaseSSHUser implements SSHUserPassword {
 
     /**
-     * The description.
+     * Ensure consistent serialization.
      */
-    private final String description;
-
-    /**
-     * The username.
-     */
-    private final String username;
+    private static final long serialVersionUID = 1L;
 
     /**
      * The password.
@@ -56,15 +49,14 @@ public class BasicSSHUserPassword extends BaseCredentials implements SSHUserPass
     /**
      * Constructor for stapler.
      * @param scope the credentials scope
+     * @param id
      * @param username the username.
      * @param password the password.
      * @param description the description.
      */
     @DataBoundConstructor
-    public BasicSSHUserPassword(CredentialsScope scope, String username, String password, String description) {
-        super(scope);
-        this.username = username;
-        this.description = description;
+    public BasicSSHUserPassword(CredentialsScope scope, String id, String username, String password, String description) {
+        super(scope, id, username, description);
         this.password = Secret.fromString(password);
     }
 
@@ -74,22 +66,6 @@ public class BasicSSHUserPassword extends BaseCredentials implements SSHUserPass
     @NonNull
     public Secret getPassword() {
         return password;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @NonNull
-    public String getUsername() {
-        return StringUtils.isEmpty(username) ? System.getProperty("user.name") : username;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @NonNull
-    public String getDescription() {
-        return StringUtils.isNotEmpty(description) ? description : "";
     }
 
     /**
