@@ -34,7 +34,7 @@
   </parent>
 
   <artifactId>ssh-credentials</artifactId>
-  <version>0.1-SNAPSHOT</version>
+  <version>0.1</version>
   <packaging>hpi</packaging>
 
   <name>SSH Credentials Plugin</name>
