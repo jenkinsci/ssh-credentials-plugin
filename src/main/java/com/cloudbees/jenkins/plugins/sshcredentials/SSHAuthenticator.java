@@ -204,9 +204,22 @@ public abstract class SSHAuthenticator<C, U extends SSHUser> {
     protected abstract boolean doAuthenticate();
 
     /**
+     * Returns the mode of authentication that this {@link SSHAuthenticator} supports.
+     *
+     * @return the mode of authentication that this {@link SSHAuthenticator} supports.
+     * @since 0.2
+     */
+    @NonNull
+    public Mode getAuthenticationMode() {
+        return Mode.AFTER_CONNECT;
+    }
+
+    /**
      * Authenticate the bound connection using the supplied credentials.
      *
-     * @return {@code true} if and only if authentication was successful.
+     * @return For an {@link #getAuthenticationMode()} of {@link Mode#BEFORE_CONNECT} the return value is
+     *         always {@code true} otherwise the return value is {@code true} if and only if authentication was
+     *         successful.
      */
     public final boolean authenticate() {
         synchronized (lock) {
@@ -219,7 +232,22 @@ public abstract class SSHAuthenticator<C, U extends SSHUser> {
                     authenticated = false;
                 }
             }
-            return isAuthenticated();
+            return isAuthenticated() || Mode.BEFORE_CONNECT.equals(getAuthenticationMode());
         }
+    }
+
+    /**
+     * Reflects the different styles of applying authentication.
+     * @since 0.2
+     */
+    public static enum Mode {
+        /**
+         * This {@link SSHAuthenticator} performs authentication before establishing the connection.
+         */
+        BEFORE_CONNECT,
+        /**
+         * This {@link SSHAuthenticator} performs authentication after establishing the connection.
+         */
+        AFTER_CONNECT;
     }
 }

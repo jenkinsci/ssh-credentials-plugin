@@ -106,6 +106,7 @@ public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
             });
             TrileadSSHPasswordAuthenticator instance =
                     new TrileadSSHPasswordAuthenticator(connection, user);
+            assertThat(instance.getAuthenticationMode(), is(SSHAuthenticator.Mode.AFTER_CONNECT));
             assertThat(instance.canAuthenticate(), is(true));
             assertThat(instance.authenticate(), is(true));
             assertThat(instance.isAuthenticated(), is(true));
@@ -139,6 +140,7 @@ public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
                 }
             });
             SSHAuthenticator instance = SSHAuthenticator.newInstance(connection, user);
+            assertThat(instance.getAuthenticationMode(), is(SSHAuthenticator.Mode.AFTER_CONNECT));
             assertThat(instance.canAuthenticate(), is(true));
             assertThat(instance.authenticate(), is(true));
             assertThat(instance.isAuthenticated(), is(true));
