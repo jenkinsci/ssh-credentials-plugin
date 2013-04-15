@@ -46,6 +46,9 @@ public interface SSHUser extends Credentials {
 
     /**
      * Returns a unique Id that can be used to find this user record again.
+     *
+     * In the default implementations provided by this plugin, IDs are auto-generated.
+     *
      * @return a unique Id that can be used to find this user record again.
      */
     String getId();

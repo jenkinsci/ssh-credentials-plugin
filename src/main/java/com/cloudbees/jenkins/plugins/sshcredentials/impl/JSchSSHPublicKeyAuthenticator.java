@@ -56,8 +56,8 @@ public class JSchSSHPublicKeyAuthenticator extends SSHAuthenticator<JSchConnecto
 
             return true;
         } catch (JSchException e) {
-            LOGGER.warning(e.getMessage());
-            return true;
+            e.printStackTrace(getListener().error("Failed to authenticate with public key"));
+            return false;
         } catch (UnsupportedEncodingException e) {
             throw new SSHAuthenticatorException(e);
         }

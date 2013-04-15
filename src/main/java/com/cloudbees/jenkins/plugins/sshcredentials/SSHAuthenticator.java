@@ -26,7 +26,10 @@ package com.cloudbees.jenkins.plugins.sshcredentials;
 import com.cloudbees.plugins.credentials.Credentials;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import hudson.model.BuildListener;
 import hudson.model.Hudson;
+import hudson.model.TaskListener;
+import hudson.util.StreamTaskListener;
 import net.jcip.annotations.GuardedBy;
 
 import java.util.ArrayList;
@@ -67,6 +70,15 @@ public abstract class SSHAuthenticator<C, U extends SSHUser> {
     private Boolean authenticated = null;
 
     /**
+     * Subtypes are expected to report authentication failures to this listener.
+     *
+     * For backward compatibility with clients that do not supply a valid listener, use one that's connected
+     * to server's stderr. This way, at least we know the error will be reported somewhere.
+     */
+    @NonNull
+    private volatile TaskListener listener = StreamTaskListener.fromStderr();
+
+    /**
      * Constructor.
      *
      * @param connection the connection we will be authenticating.
@@ -76,6 +88,26 @@ public abstract class SSHAuthenticator<C, U extends SSHUser> {
         user.getClass(); // throw NPE if null
         this.connection = connection;
         this.user = user;
+    }
+
+    @NonNull
+    public TaskListener getListener() {
+        return listener;
+    }
+
+    /**
+     * Sets the {@link TaskListener} that receives errors that happen during the authentication.
+     *
+     * If you are doing this as a part of a build, pass in your {@link BuildListener}.
+     * Pass in null to suppress the error reporting. Doing so is useful if the caller intends
+     * to try another {@link SSHAuthenticator} when this one fails.
+     *
+     * For assisting troubleshooting with callers that do not provide a valid listener,
+     * by default the errors will be sent to stderr of the server.
+     */
+    public void setListener(TaskListener listener) {
+        if (listener==null) listener=TaskListener.NULL;
+        this.listener = listener;
     }
 
     /**
@@ -199,6 +231,11 @@ public abstract class SSHAuthenticator<C, U extends SSHUser> {
     /**
      * SPI for authenticating the bound connection using the supplied credentials.
      *
+     * As a guideline, authentication errors should be reported to {@link #getListener()}
+     * before this method returns with {@code false}. This helps an user better understand
+     * what is tried and failing. Logging can be used in addition to this to capture further details.
+     * (in contrast, please avoid reporting a success to the listener to improve S/N ratio)
+     *
      * @return {@code true} if and only if authentication was successful.
      */
     protected abstract boolean doAuthenticate();
@@ -215,11 +252,8 @@ public abstract class SSHAuthenticator<C, U extends SSHUser> {
     }
 
     /**
-     * Authenticate the bound connection using the supplied credentials.
-     *
-     * @return For an {@link #getAuthenticationMode()} of {@link Mode#BEFORE_CONNECT} the return value is
-     *         always {@code true} otherwise the return value is {@code true} if and only if authentication was
-     *         successful.
+     * @deprecated as of 0.3
+     *      Use {@link #authenticate(TaskListener)} and provide a listener to receive errors.
      */
     public final boolean authenticate() {
         synchronized (lock) {
@@ -234,6 +268,18 @@ public abstract class SSHAuthenticator<C, U extends SSHUser> {
             }
             return isAuthenticated() || Mode.BEFORE_CONNECT.equals(getAuthenticationMode());
         }
+    }
+
+    /**
+     * Authenticate the bound connection using the supplied credentials.
+     *
+     * @return For an {@link #getAuthenticationMode()} of {@link Mode#BEFORE_CONNECT} the return value is
+     *         always {@code true} otherwise the return value is {@code true} if and only if authentication was
+     *         successful.
+     */
+    public final boolean authenticate(TaskListener listener) {
+        setListener(listener);
+        return authenticate();
     }
 
     /**

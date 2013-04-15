@@ -34,8 +34,8 @@ import hudson.Extension;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
+import java.util.Locale;
 import java.util.logging.Logger;
 
 /**
@@ -73,7 +73,7 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
                 }
             }
         } catch (IOException e) {
-            // ignore, connection is in a state where we cannot authenticate.
+            e.printStackTrace(getListener().error("Failed to authenticate"));
         }
         return false;
     }
@@ -83,46 +83,50 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
      */
     @Override
     protected boolean doAuthenticate() {
+        final SSHUserPassword user = getUser();
+        final String username = user.getUsername();
+
         try {
             final Connection connection = getConnection();
-            final SSHUserPassword user = getUser();
-            final String username = user.getUsername();
             final String password = user.getPassword().getPlainText();
-            boolean triedKeyboard = false;
-            while (true) {
-                Set<String> availableMethods =
-                        new HashSet<String>(Arrays.asList(connection.getRemainingAuthMethods(username)));
-                if (availableMethods.contains("password")) {
-                    // prefer password
-                    if (connection.authenticateWithPassword(username, password)) {
-                        LOGGER.info("Authentication with 'password' succeeded.");
-                        return true;
-                    }
-                    LOGGER.info("Authentication with 'password' failed.");
-                } else if (availableMethods.contains("keyboard-interactive") && !triedKeyboard) {
-                    if (connection.authenticateWithKeyboardInteractive(username, new InteractiveCallback() {
-                        public String[] replyToChallenge(String name, String instruction, int numPrompts,
-                                                         String[] prompt, boolean[] echo)
-                                throws Exception {
-                            // most SSH servers just use keyboard interactive to prompt for the password
-                            // match "assword" is safer than "password"... you don't *want* to know why!
-                            return prompt != null && prompt.length > 0 && prompt[0].toLowerCase().contains("assword")
-                                    ? new String[]{password}
-                                    : new String[0];
-                        }
-                    })) {
-                        LOGGER.info("Authentication with  'keyboard-interactive' succeeded.");
-                        return true;
-                    }
-                    LOGGER.info("Authentication with  'keyboard-interactive' failed.");
-                    triedKeyboard = true;
-                } else {
-                    return false;
+            boolean tried = false;
+
+            List<String> availableMethods = Arrays.asList(connection.getRemainingAuthMethods(username));
+            if (availableMethods.contains("password")) {
+                // prefer password
+                if (connection.authenticateWithPassword(username, password)) {
+                    LOGGER.fine("Authentication with 'password' succeeded.");
+                    return true;
                 }
+                getListener().error("Failed to authenticate as %s (credentialId:%s/method:password)", username, user.getId());
+                tried = true;
+            }
+            if (availableMethods.contains("keyboard-interactive")) {
+                if (connection.authenticateWithKeyboardInteractive(username, new InteractiveCallback() {
+                    public String[] replyToChallenge(String name, String instruction, int numPrompts,
+                                                     String[] prompt, boolean[] echo)
+                            throws Exception {
+                        // most SSH servers just use keyboard interactive to prompt for the password
+                        // match "assword" is safer than "password"... you don't *want* to know why!
+                        return prompt != null && prompt.length > 0 && prompt[0].toLowerCase(Locale.ENGLISH).contains("assword")
+                                ? new String[]{password}
+                                : new String[0];
+                    }
+                })) {
+                    LOGGER.fine("Authentication with  'keyboard-interactive' succeeded.");
+                    return true;
+                }
+                getListener().error("Failed to authenticate as %s (credentialId:%s/method:keyboard-interactive)", username, user.getId());
+                tried = true;
+            }
+
+            if (!tried) {
+                getListener().error("The server does not allow password authentication. Available options are %s",availableMethods);
             }
         } catch (IOException e) {
-            return false;
+            e.printStackTrace(getListener().error("Failed to authenticate as %s with credential=%s",username,user.getId()));
         }
+        return false;
     }
 
     /**

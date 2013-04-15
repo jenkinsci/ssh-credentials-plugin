@@ -26,7 +26,6 @@ package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticatorFactory;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUser;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPassword;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.trilead.ssh2.Connection;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -35,8 +34,8 @@ import hudson.util.Secret;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collection;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -64,16 +63,15 @@ public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connectio
     @Override
     public boolean canAuthenticate() {
         try {
-            for (String authMethod : getConnection().getRemainingAuthMethods(getUser().getUsername())) {
-                if ("publickey".equals(authMethod)) {
-                    // prefer password
-                    return true;
-                }
-            }
+            return getRemainingAuthMethods().contains("publickey");
         } catch (IOException e) {
-            // ignore, connection is in a state where we cannot authenticate.
+            e.printStackTrace(getListener().error("Failed to authenticate"));
+            return false;
         }
-        return false;
+    }
+
+    private List<String> getRemainingAuthMethods() throws IOException {
+        return Arrays.asList(getConnection().getRemainingAuthMethods(getUser().getUsername()));
     }
 
     /**
@@ -81,27 +79,28 @@ public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connectio
      */
     @Override
     protected boolean doAuthenticate() {
+        final SSHUserPrivateKey user = getUser();
+        final String username = user.getUsername();
         try {
             final Connection connection = getConnection();
-            final SSHUserPrivateKey user = getUser();
-            final String username = user.getUsername();
             final char[] key = user.getPrivateKey().toCharArray();
             final Secret userPassphrase = user.getPassphrase();
             final String passphrase = userPassphrase == null ? null : userPassphrase.getPlainText();
-            while (true) {
-                Set<String> availableMethods =
-                        new HashSet<String>(Arrays.asList(connection.getRemainingAuthMethods(username)));
-                if (availableMethods.contains("publickey")) {
-                    if (connection.authenticateWithPublicKey(username, key, passphrase)) {
-                        LOGGER.info("Authentication with 'publickey' succeeded.");
-                        return true;
-                    }
-                    LOGGER.info("Authentication with 'publickey' failed.");
-                } else {
-                    return false;
+
+            Collection<String> availableMethods = getRemainingAuthMethods();
+            if (availableMethods.contains("publickey")) {
+                if (connection.authenticateWithPublicKey(username, key, passphrase)) {
+                    LOGGER.fine("Authentication with 'publickey' succeeded.");
+                    return true;
                 }
+                getListener().error("Failed to authenticate as %s (credentialId:%s/method:publickey)", username, user.getId());
+                return false;
+            } else {
+                getListener().error("The server does not allow public key authentication. Available options are %s",availableMethods);
+                return false;
             }
         } catch (IOException e) {
+            e.printStackTrace(getListener().error("Failed to authenticate as %s with credential=%s",username,getUser().getId()));
             return false;
         }
     }
