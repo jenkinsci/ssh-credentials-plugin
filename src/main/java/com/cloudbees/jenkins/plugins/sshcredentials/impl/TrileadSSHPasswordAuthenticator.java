@@ -98,7 +98,7 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
                     LOGGER.fine("Authentication with 'password' succeeded.");
                     return true;
                 }
-                getListener().error("Failed to authenticate as %s (credentialId:%s/method:password)", username, user.getId());
+                getListener().error("Failed to authenticate as %s. Wrong password. (credentialId:%s/method:password)", username, user.getId());
                 tried = true;
             }
             if (availableMethods.contains("keyboard-interactive")) {
@@ -116,7 +116,7 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
                     LOGGER.fine("Authentication with  'keyboard-interactive' succeeded.");
                     return true;
                 }
-                getListener().error("Failed to authenticate as %s (credentialId:%s/method:keyboard-interactive)", username, user.getId());
+                getListener().error("Failed to authenticate as %s. Wrong password. (credentialId:%s/method:keyboard-interactive)", username, user.getId());
                 tried = true;
             }
 
@@ -124,7 +124,7 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
                 getListener().error("The server does not allow password authentication. Available options are %s",availableMethods);
             }
         } catch (IOException e) {
-            e.printStackTrace(getListener().error("Failed to authenticate as %s with credential=%s",username,user.getId()));
+            e.printStackTrace(getListener().error("Unexpected error while trying to authenticate as %s with credential=%s",username,user.getId()));
         }
         return false;
     }

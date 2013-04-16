@@ -93,7 +93,7 @@ public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connectio
                     LOGGER.fine("Authentication with 'publickey' succeeded.");
                     return true;
                 }
-                getListener().error("Failed to authenticate as %s (credentialId:%s/method:publickey)", username, user.getId());
+                getListener().error("Server rejected the private key for %s (credentialId:%s/method:publickey)", username, user.getId());
                 return false;
             } else {
                 getListener().error("The server does not allow public key authentication. Available options are %s",availableMethods);
