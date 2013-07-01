@@ -97,5 +97,7 @@ public class JSchSSHPublicKeyAuthenticator extends SSHAuthenticator<JSchConnecto
             return JSchConnector.class.isAssignableFrom(connectionClass)
                     && SSHUserPrivateKey.class.isAssignableFrom(userClass);
         }
+
+        private static final long serialVersionUID = 1L;
     }
 }

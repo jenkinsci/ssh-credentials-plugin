@@ -29,10 +29,15 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.model.BuildListener;
 import hudson.model.Hudson;
 import hudson.model.TaskListener;
+import hudson.remoting.Callable;
+import hudson.remoting.Channel;
 import hudson.util.StreamTaskListener;
+import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -120,10 +125,23 @@ public abstract class SSHAuthenticator<C, U extends SSHUser> {
      * @return a {@link SSHAuthenticator} that may or may not be able to successfully authenticate.
      */
     @NonNull
-    public static <C, U extends SSHUser> SSHAuthenticator<C, U> newInstance(@NonNull C connection, @NonNull U user) {
+    public static <C, U extends SSHUser> SSHAuthenticator<C, U> newInstance(@NonNull C connection, @NonNull U user) throws InterruptedException, IOException {
         connection.getClass(); // throw NPE if null
         user.getClass(); // throw NPE if null
-        for (SSHAuthenticatorFactory factory : Hudson.getInstance().getExtensionList(SSHAuthenticatorFactory.class)) {
+        Collection<SSHAuthenticatorFactory> factories;
+        if (Jenkins.getInstance()!=null) {
+            // if running on the master
+            factories = Jenkins.getInstance().getExtensionList(SSHAuthenticatorFactory.class);
+        } else {
+            // if running on the slave, bring these factories over here
+            factories = Channel.current().call(new Callable<Collection<SSHAuthenticatorFactory>,IOException>() {
+                public Collection<SSHAuthenticatorFactory> call() throws IOException {
+                    return new ArrayList<SSHAuthenticatorFactory>(Jenkins.getInstance().getExtensionList(SSHAuthenticatorFactory.class));
+                }
+            });
+        }
+
+        for (SSHAuthenticatorFactory factory : factories) {
             SSHAuthenticator<C, U> result = factory.newInstance(connection, user);
             if (result != null && result.canAuthenticate()) {
                 return result;

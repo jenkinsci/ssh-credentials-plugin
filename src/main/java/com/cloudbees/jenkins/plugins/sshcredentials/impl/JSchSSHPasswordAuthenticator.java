@@ -75,6 +75,8 @@ public class JSchSSHPasswordAuthenticator extends SSHAuthenticator<JSchConnector
             return JSchConnector.class.isAssignableFrom(connectionClass)
                     && SSHUserPassword.class.isAssignableFrom(userClass);
         }
+
+        private static final long serialVersionUID = 1L;
     }
 
     private class JSchUserInfo implements UserInfo, UIKeyboardInteractive {

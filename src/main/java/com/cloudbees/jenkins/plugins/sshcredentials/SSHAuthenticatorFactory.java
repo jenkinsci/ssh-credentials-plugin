@@ -27,11 +27,18 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.ExtensionPoint;
 
+import java.io.Serializable;
+
 /**
  * Extension point to allow plugging in {@link SSHAuthenticator} implementations for the many SSH client libraries
  * available.
+ *
+ * <p>
+ * This object can be shipped to remote to create an {@link SSHAuthenticator} on a remote node.
+ *
+ * @see SSHAuthenticator#newInstance(Object, SSHUser)
  */
-public abstract class SSHAuthenticatorFactory implements ExtensionPoint {
+public abstract class SSHAuthenticatorFactory implements ExtensionPoint, Serializable {
 
     /**
      * Returns an instance of {@link SSHAuthenticator} for the supplied connection and user, or {@code null} if
@@ -59,4 +66,6 @@ public abstract class SSHAuthenticatorFactory implements ExtensionPoint {
      */
     protected abstract <C, U extends SSHUser> boolean supports(@NonNull Class<C> connectionClass,
                                                                @NonNull Class<U> userClass);
+
+    private static final long serialVersionUID = 1L;
 }

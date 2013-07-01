@@ -133,5 +133,7 @@ public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connectio
             return Connection.class.isAssignableFrom(connectionClass)
                     && SSHUserPrivateKey.class.isAssignableFrom(userClass);
         }
+
+        private static final long serialVersionUID = 1L;
     }
 }
