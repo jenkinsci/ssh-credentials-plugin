@@ -33,7 +33,7 @@
   </parent>
 
   <artifactId>ssh-credentials</artifactId>
-  <version>0.4-SNAPSHOT</version>
+  <version>0.4</version>
   <packaging>hpi</packaging>
 
   <name>SSH Credentials Plugin</name>
