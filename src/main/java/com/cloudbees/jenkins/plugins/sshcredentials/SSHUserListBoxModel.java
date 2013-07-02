@@ -2,6 +2,8 @@ package com.cloudbees.jenkins.plugins.sshcredentials;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import hudson.model.Descriptor;
+import hudson.model.Item;
+import hudson.model.Job;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
@@ -53,7 +55,29 @@ import java.util.Collection;
  *
  * <p>
  * Exactly which overloaded version of the {@link CredentialsProvider#lookupCredentials(Class)} depends on
- * the context in which your model operates.
+ * the context in which your model operates. Here are a few comon examples:
+ *
+ * <dl>
+ *     <dt>System-level settings
+ *     <dd>
+ *         If your model is a singleton in the whole Jenkins instance, things that belong to the root {@link Jenkins}
+ *         (such as slaves), or do not have any ancestors serving as the context, then use {@link #addSystemScopeCredentials()}.
+ *
+ *     <dt>Job-level settings
+ *     <dd>
+ *         If your model is a configuration fragment added to a {@link Item} (such as its major subtype {@link Job}),
+ *         then use that {@link Item} as the context and call {@link CredentialsProvider#lookupCredentials(Class, Item)}
+ *         See below:
+ *
+ * <pre>
+ * public SSHUserListBoxModel doFillCredentialsIdItems(@AncestorInPath AbstractProject context) {
+ *     return new SSHUserListBoxModel().addCollection(
+ *         CredentialsProvider.lookupCredentials(SSHUser.class, context));
+ * }
+ * </pre>
+ * </dl>
+ *
+ *
  *
  * @author Kohsuke Kawaguchi
  */
