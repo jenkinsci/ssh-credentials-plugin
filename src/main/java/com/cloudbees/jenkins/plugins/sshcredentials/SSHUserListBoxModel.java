@@ -2,7 +2,6 @@ package com.cloudbees.jenkins.plugins.sshcredentials;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import hudson.model.Descriptor;
-import hudson.security.ACL;
 import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
@@ -47,7 +46,7 @@ import java.util.Collection;
  * <pre>
  * public SSHUserListBoxModel doFillCredentialsIdItems() {
  *     SSHUserListBoxModel r = new SSHUserListBoxModel();
- *     r.addAll(CredentialsProvider.lookupCredentials(SSHUser.class,...)); // populate 'r'
+ *     r.addCollection(CredentialsProvider.lookupCredentials(SSHUser.class,...)); // populate 'r'
  *     return r;
  * }
  * </pre>
@@ -64,7 +63,7 @@ public class SSHUserListBoxModel extends ListBoxModel {
         return this;
     }
 
-    public SSHUserListBoxModel addAll(Collection<? extends SSHUser> col) {
+    public SSHUserListBoxModel addCollection(Collection<? extends SSHUser> col) {
         for (SSHUser u : col)
             add(u);
         return this;
@@ -78,6 +77,6 @@ public class SSHUserListBoxModel extends ListBoxModel {
      * such as slaves.
      */
     public SSHUserListBoxModel addSystemScopeCredentials() {
-        return addAll(CredentialsProvider.lookupCredentials(SSHUser.class));
+        return addCollection(CredentialsProvider.lookupCredentials(SSHUser.class));
     }
 }

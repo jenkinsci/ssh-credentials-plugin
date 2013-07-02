@@ -34,7 +34,9 @@ import hudson.util.Secret;
 public interface SSHUserPrivateKey extends SSHUser {
     /**
      * Returns the private key. This should be in OpenSSH format.
-     * @return the private key in OpenSSH format.
+     *
+     * @return
+     *      This is the actual content of the private key and not the path to the private key.
      */
     @NonNull
     String getPrivateKey();

@@ -27,7 +27,15 @@ import com.cloudbees.plugins.credentials.Credentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 /**
- * Details of a SSH user.
+ * Represents a user name and a secret (password/privateKey/etc) needed to perform an authentication in an SSH connection.
+ *
+ * <p>
+ * This interface is a base interface that defines commonality across all the modes of authentications,
+ * then the subtype defines a specific type of secret.
+ *
+ * @see SSHUserPassword
+ * @see SSHUserPrivateKey
+ * @see SSHUserListBoxModel
  */
 public interface SSHUser extends Credentials {
     /**
