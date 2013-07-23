@@ -23,13 +23,14 @@
  */
 package com.cloudbees.jenkins.plugins.sshcredentials;
 
+import com.cloudbees.plugins.credentials.common.PasswordCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.util.Secret;
 
 /**
  * Details of a SSH user with password.
  */
-public interface SSHUserPassword extends SSHUser {
+public interface SSHUserPassword extends SSHUser, PasswordCredentials {
     /**
      * Returns the password.
      * @return the password.

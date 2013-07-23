@@ -24,6 +24,8 @@
 package com.cloudbees.jenkins.plugins.sshcredentials;
 
 import com.cloudbees.plugins.credentials.Credentials;
+import com.cloudbees.plugins.credentials.common.IdCredentials;
+import com.cloudbees.plugins.credentials.common.UsernameCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 /**
@@ -37,7 +39,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  * @see SSHUserPrivateKey
  * @see SSHUserListBoxModel
  */
-public interface SSHUser extends Credentials {
+public interface SSHUser extends Credentials, UsernameCredentials, IdCredentials {
     /**
      * The SSH username
      *
