@@ -23,43 +23,22 @@
  */
 package com.cloudbees.jenkins.plugins.sshcredentials;
 
-import com.cloudbees.plugins.credentials.Credentials;
-import com.cloudbees.plugins.credentials.common.IdCredentials;
-import com.cloudbees.plugins.credentials.common.UsernameCredentials;
-import edu.umd.cs.findbugs.annotations.NonNull;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 
 /**
- * Represents a user name and a secret (password/privateKey/etc) needed to perform an authentication in an SSH connection.
- *
- * <p>
+ * Represents a user name and a secret (password/privateKey/etc) needed to perform an authentication in an SSH
+ * connection.
+ * <p/>
+ * <p/>
  * This interface is a base interface that defines commonality across all the modes of authentications,
  * then the subtype defines a specific type of secret.
  *
  * @see SSHUserPassword
  * @see SSHUserPrivateKey
  * @see SSHUserListBoxModel
+ * @deprecated Use {@link StandardUsernameCredentials} as the common class.
  */
-public interface SSHUser extends Credentials, UsernameCredentials, IdCredentials {
-    /**
-     * The SSH username
-     *
-     * @return The SSH username
-     */
-    @NonNull
-    String getUsername();
+@Deprecated
+public interface SSHUser extends StandardUsernameCredentials {
 
-    /**
-     * The display description of this credential (e.g. the host name / domain that the user details apply to)
-     * @return The display description of this credential.
-     */
-    String getDescription();
-
-    /**
-     * Returns a unique Id that can be used to find this user record again.
-     *
-     * In the default implementations provided by this plugin, IDs are auto-generated.
-     *
-     * @return a unique Id that can be used to find this user record again.
-     */
-    String getId();
 }

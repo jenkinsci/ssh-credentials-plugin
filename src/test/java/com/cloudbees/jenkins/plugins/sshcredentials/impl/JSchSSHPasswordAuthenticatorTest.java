@@ -26,10 +26,13 @@ package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPassword;
 import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.jcraft.jsch.HostKey;
 import com.jcraft.jsch.HostKeyRepository;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.UserInfo;
+import hudson.model.Items;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.server.PasswordAuthenticator;
@@ -51,7 +54,7 @@ import static org.junit.Assert.*;
 public class JSchSSHPasswordAuthenticatorTest extends HudsonTestCase {
 
     private JSchConnector connector;
-    private SSHUserPassword user;
+    private StandardUsernamePasswordCredentials user;
 
     @Override
     protected void tearDown() throws Exception {
@@ -86,7 +89,7 @@ public class JSchSSHPasswordAuthenticatorTest extends HudsonTestCase {
 
     protected void setUp() throws Exception {
         super.setUp();
-        user = new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, "foobar", "foomanchu", null);
+        user =(StandardUsernamePasswordCredentials) Items.XSTREAM.fromXML(Items.XSTREAM.toXML(new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, "foobar", "foomanchu", null)));
     }
 
     public void testPassword() throws Exception {

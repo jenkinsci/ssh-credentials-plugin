@@ -3,8 +3,8 @@ package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticatorException;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticatorFactory;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUser;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.jcraft.jsch.JSchException;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
@@ -51,8 +51,11 @@ public class JSchSSHPublicKeyAuthenticator extends SSHAuthenticator<JSchConnecto
             final SSHUserPrivateKey user = getUser();
             final Secret userPassphrase = user.getPassphrase();
             final String passphrase = userPassphrase == null ? null : userPassphrase.getPlainText();
-            getConnection().getJSch().addIdentity(user.getUsername(), user.getPrivateKey().getBytes("UTF-8"), null,
-                    passphrase == null ? null : passphrase.getBytes("UTF-8"));
+            byte[] passphraseBytes = passphrase == null ? null : passphrase.getBytes("UTF-8");
+            for (String privateKey : user.getPrivateKeys()) {
+                getConnection().getJSch().addIdentity(user.getUsername(), privateKey.getBytes("UTF-8"), null,
+                        passphraseBytes);
+            }
 
             return true;
         } catch (JSchException e) {
@@ -80,7 +83,8 @@ public class JSchSSHPublicKeyAuthenticator extends SSHAuthenticator<JSchConnecto
          */
         @Override
         @SuppressWarnings("unchecked")
-        protected <C, U extends SSHUser> SSHAuthenticator<C, U> newInstance(@NonNull C session, @NonNull U user) {
+        protected <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(@NonNull C session,
+                                                                                                @NonNull U user) {
             if (supports(session.getClass(), user.getClass())) {
                 return (SSHAuthenticator<C, U>) new JSchSSHPublicKeyAuthenticator((JSchConnector) session,
                         (SSHUserPrivateKey) user);
@@ -92,8 +96,8 @@ public class JSchSSHPublicKeyAuthenticator extends SSHAuthenticator<JSchConnecto
          * {@inheritDoc}
          */
         @Override
-        protected <C, U extends SSHUser> boolean supports(@NonNull Class<C> connectionClass,
-                                                          @NonNull Class<U> userClass) {
+        protected <C, U extends StandardUsernameCredentials> boolean supports(@NonNull Class<C> connectionClass,
+                                                                              @NonNull Class<U> userClass) {
             return JSchConnector.class.isAssignableFrom(connectionClass)
                     && SSHUserPrivateKey.class.isAssignableFrom(userClass);
         }

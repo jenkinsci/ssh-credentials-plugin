@@ -28,9 +28,11 @@ import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticatorFactory;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUser;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPassword;
 import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.ServerHostKeyVerifier;
 import hudson.model.Computer;
+import hudson.model.Items;
 import hudson.remoting.Callable;
 import hudson.slaves.DumbSlave;
 import org.apache.sshd.SshServer;
@@ -52,7 +54,7 @@ import static org.junit.Assert.assertThat;
 public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
 
     private Connection connection;
-    private SSHUserPassword user;
+    private StandardUsernamePasswordCredentials user;
     private SshServer sshd;
 
     @Override
@@ -88,7 +90,7 @@ public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
 
     protected void setUp() throws Exception {
         super.setUp();
-        user = new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, "foobar", "foomanchu", null);
+        user =(StandardUsernamePasswordCredentials) Items.XSTREAM.fromXML(Items.XSTREAM.toXML(new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, "foobar", "foomanchu", null)));
     }
 
     public void testPassword() throws Exception {
@@ -154,9 +156,9 @@ public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
 
     private static final class RemoteConnectionTest implements Callable<Void, Exception> {
         private final int port;
-        private SSHUser user;
+        private StandardUsernamePasswordCredentials user;
 
-        public RemoteConnectionTest(int port, SSHUser user) {
+        public RemoteConnectionTest(int port, StandardUsernamePasswordCredentials user) {
             this.port = port;
             this.user = user;
         }

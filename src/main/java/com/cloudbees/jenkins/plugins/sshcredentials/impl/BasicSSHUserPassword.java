@@ -24,16 +24,20 @@
 package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPassword;
-import com.cloudbees.plugins.credentials.CredentialsDescriptor;
+import com.cloudbees.plugins.credentials.CredentialsResolver;
 import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.ResolveWith;
+import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import hudson.Extension;
 import hudson.util.Secret;
-import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * A simple username / password for use with SSH connections.
+ *
+ * @deprecated use {@link UsernamePasswordCredentialsImpl}
  */
+@ResolveWith(BasicSSHUserPassword.ResolverImpl.class)
+@Deprecated
 public class BasicSSHUserPassword extends BaseSSHUser implements SSHUserPassword {
 
     /**
@@ -48,14 +52,15 @@ public class BasicSSHUserPassword extends BaseSSHUser implements SSHUserPassword
 
     /**
      * Constructor for stapler.
-     * @param scope the credentials scope
+     *
+     * @param scope       the credentials scope
      * @param id
-     * @param username the username.
-     * @param password the password.
+     * @param username    the username.
+     * @param password    the password.
      * @param description the description.
      */
-    @DataBoundConstructor
-    public BasicSSHUserPassword(CredentialsScope scope, String id, String username, String password, String description) {
+    public BasicSSHUserPassword(CredentialsScope scope, String id, String username, String password,
+                                String description) {
         super(scope, id, username, description);
         this.password = Secret.fromString(password);
     }
@@ -71,15 +76,43 @@ public class BasicSSHUserPassword extends BaseSSHUser implements SSHUserPassword
     /**
      * {@inheritDoc}
      */
-    @Extension
-    public static class DescriptorImpl extends CredentialsDescriptor {
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    private Object readResolve() {
+        return new UsernamePasswordCredentialsImpl(getScope(), getId(), getDescription(), getUsername(), getPassword().getEncryptedValue());
+    }
+
+    /**
+     * Resolve credentials for legacy code.
+     *
+     * @since 0.5
+     */
+    public static class ResolverImpl
+            extends CredentialsResolver<UsernamePasswordCredentialsImpl, BasicSSHUserPassword> {
 
         /**
-         * {@inheritDoc}
+         * Default constructor.
          */
+        public ResolverImpl() {
+            super(UsernamePasswordCredentialsImpl.class);
+        }
+
+        @NonNull
         @Override
-        public String getDisplayName() {
-            return Messages.BasicSSHUserPassword_DisplayName();
+        protected BasicSSHUserPassword doResolve(@NonNull UsernamePasswordCredentialsImpl original) {
+            return new BasicSSHUserPassword(original.getScope(), original.getId(), original.getUsername(),
+                    original.getPassword().getEncryptedValue(), original.getDescription());
         }
     }
 }

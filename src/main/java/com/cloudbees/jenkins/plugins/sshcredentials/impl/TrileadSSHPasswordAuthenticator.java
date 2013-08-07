@@ -25,8 +25,8 @@ package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticatorFactory;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUser;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPassword;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.InteractiveCallback;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -41,7 +41,7 @@ import java.util.logging.Logger;
 /**
  * Does password auth with a {@link Connection}.
  */
-public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection, SSHUserPassword> {
+public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection, StandardUsernamePasswordCredentials> {
 
     /**
      * Our logger
@@ -53,7 +53,7 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
      *
      * @param connection the connection we will be authenticating.
      */
-    public TrileadSSHPasswordAuthenticator(Connection connection, SSHUserPassword user) {
+    public TrileadSSHPasswordAuthenticator(Connection connection, StandardUsernamePasswordCredentials user) {
         super(connection, user);
     }
 
@@ -83,7 +83,7 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
      */
     @Override
     protected boolean doAuthenticate() {
-        final SSHUserPassword user = getUser();
+        final StandardUsernamePasswordCredentials user = getUser();
         final String username = user.getUsername();
 
         try {
@@ -98,7 +98,8 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
                     LOGGER.fine("Authentication with 'password' succeeded.");
                     return true;
                 }
-                getListener().error("Failed to authenticate as %s. Wrong password. (credentialId:%s/method:password)", username, user.getId());
+                getListener().error("Failed to authenticate as %s. Wrong password. (credentialId:%s/method:password)",
+                        username, user.getId());
                 tried = true;
             }
             if (availableMethods.contains("keyboard-interactive")) {
@@ -108,7 +109,8 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
                             throws Exception {
                         // most SSH servers just use keyboard interactive to prompt for the password
                         // match "assword" is safer than "password"... you don't *want* to know why!
-                        return prompt != null && prompt.length > 0 && prompt[0].toLowerCase(Locale.ENGLISH).contains("assword")
+                        return prompt != null && prompt.length > 0 && prompt[0].toLowerCase(Locale.ENGLISH)
+                                .contains("assword")
                                 ? new String[]{password}
                                 : new String[0];
                     }
@@ -116,15 +118,21 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
                     LOGGER.fine("Authentication with  'keyboard-interactive' succeeded.");
                     return true;
                 }
-                getListener().error("Failed to authenticate as %s. Wrong password. (credentialId:%s/method:keyboard-interactive)", username, user.getId());
+                getListener()
+                        .error("Failed to authenticate as %s. Wrong password. "
+                                + "(credentialId:%s/method:keyboard-interactive)",
+                                username, user.getId());
                 tried = true;
             }
 
             if (!tried) {
-                getListener().error("The server does not allow password authentication. Available options are %s",availableMethods);
+                getListener().error("The server does not allow password authentication. Available options are %s",
+                        availableMethods);
             }
         } catch (IOException e) {
-            e.printStackTrace(getListener().error("Unexpected error while trying to authenticate as %s with credential=%s",username,user.getId()));
+            e.printStackTrace(getListener()
+                    .error("Unexpected error while trying to authenticate as %s with credential=%s", username,
+                            user.getId()));
         }
         return false;
     }
@@ -140,10 +148,11 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
          */
         @Override
         @SuppressWarnings("unchecked")
-        protected <C, U extends SSHUser> SSHAuthenticator<C, U> newInstance(@NonNull C connection, @NonNull U user) {
+        protected <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(@NonNull C connection,
+                                                                                                @NonNull U user) {
             if (supports(connection.getClass(), user.getClass())) {
                 return (SSHAuthenticator<C, U>) new TrileadSSHPasswordAuthenticator((Connection) connection,
-                        (SSHUserPassword) user);
+                        (StandardUsernamePasswordCredentials) user);
             }
             return null;
         }
@@ -152,10 +161,10 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
          * {@inheritDoc}
          */
         @Override
-        protected <C, U extends SSHUser> boolean supports(@NonNull Class<C> connectionClass,
-                                                          @NonNull Class<U> userClass) {
-            return Connection.class.isAssignableFrom(connectionClass) && SSHUserPassword.class
-                    .isAssignableFrom(userClass);
+        protected <C, U extends StandardUsernameCredentials> boolean supports(@NonNull Class<C> connectionClass,
+                                                                              @NonNull Class<U> userClass) {
+            return Connection.class.isAssignableFrom(connectionClass)
+                    && StandardUsernamePasswordCredentials.class.isAssignableFrom(userClass);
         }
 
         private static final long serialVersionUID = 1L;

@@ -25,8 +25,8 @@ package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticatorFactory;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUser;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.trilead.ssh2.Connection;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- *  Does public key auth with a {@link Connection}.
+ * Does public key auth with a {@link Connection}.
  */
 public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connection, SSHUserPrivateKey> {
 
@@ -83,24 +83,31 @@ public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connectio
         final String username = user.getUsername();
         try {
             final Connection connection = getConnection();
-            final char[] key = user.getPrivateKey().toCharArray();
             final Secret userPassphrase = user.getPassphrase();
             final String passphrase = userPassphrase == null ? null : userPassphrase.getPlainText();
 
             Collection<String> availableMethods = getRemainingAuthMethods();
             if (availableMethods.contains("publickey")) {
-                if (connection.authenticateWithPublicKey(username, key, passphrase)) {
-                    LOGGER.fine("Authentication with 'publickey' succeeded.");
-                    return true;
+                int count = 0;
+                for (String privateKey : user.getPrivateKeys()) {
+                    if (connection.authenticateWithPublicKey(username, privateKey.toCharArray(), passphrase)) {
+                        LOGGER.fine("Authentication with 'publickey' succeeded.");
+                        return true;
+                    }
+                    count++;
+                    getListener()
+                            .error("Server rejected the %d private key(s) for %s (credentialId:%s/method:publickey)",
+                                    count, username, user.getId());
                 }
-                getListener().error("Server rejected the private key for %s (credentialId:%s/method:publickey)", username, user.getId());
                 return false;
             } else {
-                getListener().error("The server does not allow public key authentication. Available options are %s",availableMethods);
+                getListener().error("The server does not allow public key authentication. Available options are %s",
+                        availableMethods);
                 return false;
             }
         } catch (IOException e) {
-            e.printStackTrace(getListener().error("Failed to authenticate as %s with credential=%s",username,getUser().getId()));
+            e.printStackTrace(getListener()
+                    .error("Failed to authenticate as %s with credential=%s", username, getUser().getId()));
             return false;
         }
     }
@@ -116,7 +123,8 @@ public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connectio
          */
         @Override
         @SuppressWarnings("unchecked")
-        protected <C, U extends SSHUser> SSHAuthenticator<C, U> newInstance(@NonNull C connection, @NonNull U user) {
+        protected <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(@NonNull C connection,
+                                                                                                @NonNull U user) {
             if (supports(connection.getClass(), user.getClass())) {
                 return (SSHAuthenticator<C, U>) new TrileadSSHPublicKeyAuthenticator((Connection) connection,
                         (SSHUserPrivateKey) user);
@@ -128,8 +136,8 @@ public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connectio
          * {@inheritDoc}
          */
         @Override
-        protected <C, U extends SSHUser> boolean supports(@NonNull Class<C> connectionClass,
-                                                          @NonNull Class<U> userClass) {
+        protected <C, U extends StandardUsernameCredentials> boolean supports(@NonNull Class<C> connectionClass,
+                                                                              @NonNull Class<U> userClass) {
             return Connection.class.isAssignableFrom(connectionClass)
                     && SSHUserPrivateKey.class.isAssignableFrom(userClass);
         }

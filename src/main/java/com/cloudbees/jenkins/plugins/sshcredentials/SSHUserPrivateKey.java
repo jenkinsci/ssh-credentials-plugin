@@ -25,26 +25,41 @@ package com.cloudbees.jenkins.plugins.sshcredentials;
 
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.util.Secret;
+
+import java.util.List;
 
 /**
  * Details of a SSH user with a private key.
  */
 public interface SSHUserPrivateKey extends SSHUser {
     /**
-     * Returns the private key. This should be in OpenSSH format.
+     * Returns the first private key. This should be in OpenSSH format.
      *
-     * @return
-     *      This is the actual content of the private key and not the path to the private key.
+     * @return This is the actual content of the first private key and not the path to the private key.
+     * @deprecated use {@link #getPrivateKeys()}
      */
+    @Deprecated
     @NonNull
     String getPrivateKey();
 
     /**
-     * Gets the passphrase for the private key or {@code null} if the private key is not protected by a passphase.
-     * @return the passphrase for the private key or {@code null} if the private key is not protected by a passphase.
+     * Gets the passphrase for the private keys or {@code null} if the private keys are not protected by a
+     * passphase.
+     *
+     * @return the passphrase for the private keys or {@code null} if the private key are not protected by
+     *         a passphase.
      */
     @CheckForNull
     Secret getPassphrase();
+
+    /**
+     * Returns a collection of keys to try in order for authentication.
+     *
+     * @return a collection of keys to try in order for authentication.
+     * @since 0.5
+     */
+    @NonNull
+    List<String> getPrivateKeys();
+
 }

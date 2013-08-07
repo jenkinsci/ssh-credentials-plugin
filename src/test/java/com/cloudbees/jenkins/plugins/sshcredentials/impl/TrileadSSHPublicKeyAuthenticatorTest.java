@@ -43,6 +43,8 @@ import org.jvnet.hudson.test.HudsonTestCase;
 
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -72,12 +74,13 @@ public class TrileadSSHPublicKeyAuthenticatorTest extends HudsonTestCase {
                 return "foobar";
             }
 
+            @NonNull
             public String getDescription() {
-                return null;
+                return "";
             }
 
             public String getId() {
-                return null;  //To change body of implemented methods use File | Settings | File Templates.
+                return "";
             }
 
             public CredentialsScope getScope() {
@@ -118,6 +121,11 @@ public class TrileadSSHPublicKeyAuthenticatorTest extends HudsonTestCase {
             @CheckForNull
             public Secret getPassphrase() {
                 return null;
+            }
+
+            @NonNull
+            public List<String> getPrivateKeys() {
+                return Collections.singletonList(getPrivateKey());
             }
         };
     }

@@ -23,6 +23,7 @@
  */
 package com.cloudbees.jenkins.plugins.sshcredentials;
 
+import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.ExtensionPoint;
@@ -32,8 +33,8 @@ import java.io.Serializable;
 /**
  * Extension point to allow plugging in {@link SSHAuthenticator} implementations for the many SSH client libraries
  * available.
- *
- * <p>
+ * <p/>
+ * <p/>
  * This object can be shipped to remote to create an {@link SSHAuthenticator} on a remote node.
  *
  * @see SSHAuthenticator#newInstance(Object, SSHUser)
@@ -52,8 +53,9 @@ public abstract class SSHAuthenticatorFactory implements ExtensionPoint, Seriali
      *         instance bound to the supplied connection and user.
      */
     @Nullable
-    protected abstract <C, U extends SSHUser> SSHAuthenticator<C, U> newInstance(@NonNull C connection,
-                                                                                 @NonNull U user);
+    protected abstract <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(
+            @NonNull C connection,
+            @NonNull U user);
 
     /**
      * Returns {@code true} if and only if the supplied connection class and user class are supported by this factory.
@@ -64,8 +66,8 @@ public abstract class SSHAuthenticatorFactory implements ExtensionPoint, Seriali
      * @param <U>             the type of user.
      * @return {@code true} if and only if the supplied connection class and user class are supported by this factory.
      */
-    protected abstract <C, U extends SSHUser> boolean supports(@NonNull Class<C> connectionClass,
-                                                               @NonNull Class<U> userClass);
+    protected abstract <C, U extends StandardUsernameCredentials> boolean supports(@NonNull Class<C> connectionClass,
+                                                                                   @NonNull Class<U> userClass);
 
     private static final long serialVersionUID = 1L;
 }

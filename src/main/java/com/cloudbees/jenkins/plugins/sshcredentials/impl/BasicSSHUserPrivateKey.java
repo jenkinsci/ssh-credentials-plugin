@@ -43,7 +43,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -70,7 +73,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
     /**
      * The private key.
      */
-    private transient volatile String privateKey;
+    private transient volatile List<String> privateKeys;
 
     /**
      * Constructor for stapler.
@@ -95,23 +98,31 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
      */
     @NonNull
     public String getPrivateKey() {
-        if (privateKey == null) {
-            String privateKey = privateKeySource.getPrivateKey();
-            try {
-                if (PuTTYKey.isPuTTYKeyFile(new StringReader(privateKey))) {
-                    // strictly we should be encrypting the openssh version with the passphrase, but
-                    // if the key we pass back does not have a passphrase, then the passphrase will not be
-                    // checked, so not an issue.
-                    privateKey = new PuTTYKey(new StringReader(privateKey),
-                            passphrase == null ? "" : passphrase.getPlainText())
-                            .toOpenSSH();
+        List<String> privateKeys = getPrivateKeys();
+        return privateKeys.isEmpty() ? "" : privateKeys.get(0);
+    }
+
+    @NonNull
+    public List<String> getPrivateKeys() {
+        if (privateKeys == null) {
+            List<String> privateKeys = new ArrayList<String>();
+            for (String privateKey : privateKeySource.getPrivateKeys()) {
+                try {
+                    if (PuTTYKey.isPuTTYKeyFile(new StringReader(privateKey))) {
+                        // strictly we should be encrypting the openssh version with the passphrase, but
+                        // if the key we pass back does not have a passphrase, then the passphrase will not be
+                        // checked, so not an issue.
+                        privateKeys.add(new PuTTYKey(new StringReader(privateKey),
+                                passphrase == null ? "" : passphrase.getPlainText())
+                                .toOpenSSH());
+                    }
+                } catch (IOException e) {
+                    // ignore
                 }
-            } catch (IOException e) {
-                // ignore
             }
-            this.privateKey = privateKey; // idempotent write
+            this.privateKeys = privateKeys; // idempotent write
         }
-        return privateKey;
+        return privateKeys;
     }
 
     @NonNull
@@ -125,6 +136,22 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
     @NonNull
     public Secret getPassphrase() {
         return passphrase;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object o) {
+        return super.equals(o);
     }
 
     /**
@@ -146,7 +173,8 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         }
 
         public BasicSSHUserPrivateKey fixInstance(BasicSSHUserPrivateKey instance) {
-            return instance == null ? new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, null, "", new DirectEntryPrivateKeySource(""), "",
+            return instance == null ? new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, null, "",
+                    new DirectEntryPrivateKeySource(""), "",
 
                     "") : instance;
         }
@@ -161,7 +189,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          * Gets the private key from the source
          */
         @NonNull
-        public abstract String getPrivateKey();
+        public abstract List<String> getPrivateKeys();
     }
 
     /**
@@ -191,8 +219,8 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          */
         @NonNull
         @Override
-        public String getPrivateKey() {
-            return privateKey;
+        public List<String> getPrivateKeys() {
+            return Collections.singletonList(privateKey);
         }
 
         /**
@@ -232,9 +260,10 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          */
         @NonNull
         @Override
-        public String getPrivateKey() {
+        public List<String> getPrivateKeys() {
             try {
-                return Hudson.getInstance().getRootPath().act(new ReadFileOnMaster(privateKeyFile));
+                return Collections
+                        .singletonList(Hudson.getInstance().getRootPath().act(new ReadFileOnMaster(privateKeyFile)));
             } catch (IOException e) {
                 Logger.getLogger(getClass().getName())
                         .log(Level.WARNING, "Could not read private key file " + privateKeyFile, e);
@@ -242,7 +271,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                 Logger.getLogger(getClass().getName())
                         .log(Level.WARNING, "Could not read private key file " + privateKeyFile, e);
             }
-            return "";
+            return Collections.emptyList();
         }
 
         /**
@@ -288,7 +317,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          */
         @NonNull
         @Override
-        public String getPrivateKey() {
+        public List<String> getPrivateKeys() {
             try {
                 return Hudson.getInstance().getRootPath().act(new ReadKeyOnMaster());
             } catch (IOException e) {
@@ -296,8 +325,9 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             } catch (InterruptedException e) {
                 Logger.getLogger(getClass().getName()).log(Level.WARNING, "Could not read private key", e);
             }
-            return "";
+            return Collections.emptyList();
         }
+
 
         /**
          * {@inheritDoc}
@@ -336,22 +366,23 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         }
     }
 
-    public static class ReadKeyOnMaster implements FilePath.FileCallable<String> {
+    public static class ReadKeyOnMaster implements FilePath.FileCallable<List<String>> {
 
         /**
          * Ensure consistent serialization.
          */
-        private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 2L;
 
-        public String invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
+        public List<String> invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
+            List<String> result = new ArrayList<String>();
             File sshHome = new File(new File(System.getProperty("user.home")), ".ssh");
             for (String keyName : Arrays.asList("id_rsa", "id_dsa", "identity")) {
                 File key = new File(sshHome, keyName);
                 if (key.isFile()) {
-                    return FileUtils.readFileToString(key);
+                    result.add(FileUtils.readFileToString(key));
                 }
             }
-            return "";
+            return result;
         }
     }
 }
