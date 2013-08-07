@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -74,6 +75,13 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
      * The private key.
      */
     private transient volatile List<String> privateKeys;
+
+    /**
+     * The maximum amount of time to cache the private keys before refreshing.
+     *
+     * @since 1.1
+     */
+    private transient volatile long privateKeysCachedUntil;
 
     /**
      * Constructor for stapler.
@@ -104,7 +112,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
 
     @NonNull
     public List<String> getPrivateKeys() {
-        if (privateKeys == null) {
+        if (privateKeys == null || privateKeys.isEmpty() || System.currentTimeMillis() > privateKeysCachedUntil) {
             List<String> privateKeys = new ArrayList<String>();
             for (String privateKey : privateKeySource.getPrivateKeys()) {
                 try {
@@ -115,12 +123,15 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                         privateKeys.add(new PuTTYKey(new StringReader(privateKey),
                                 passphrase == null ? "" : passphrase.getPlainText())
                                 .toOpenSSH());
+                    } else {
+                        privateKeys.add(privateKey);
                     }
                 } catch (IOException e) {
                     // ignore
                 }
             }
             this.privateKeys = privateKeys; // idempotent write
+            this.privateKeysCachedUntil = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(30);
         }
         return privateKeys;
     }
