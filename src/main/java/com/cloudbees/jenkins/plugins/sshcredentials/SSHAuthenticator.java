@@ -167,6 +167,12 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
         };
     }
 
+    /** @deprecated Use {@link #newInstance(Object, StandardUsernameCredentials)} instead. */
+    @Deprecated
+    public static SSHAuthenticator<Object,StandardUsernameCredentials> newInstance(Object connection, SSHUser user) throws InterruptedException, IOException {
+        return newInstance(connection, (StandardUsernameCredentials) user);
+    }
+
     /**
      * Returns {@code true} if and only if the supplied connection class and user class are supported by at least one
      * factory.
