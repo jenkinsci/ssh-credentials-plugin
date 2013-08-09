@@ -48,6 +48,7 @@ import java.util.logging.Logger;
 
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.anyOf;
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
+import java.util.Collections;
 
 /**
  * Abstraction for something that can authenticate an SSH connection.
@@ -372,6 +373,19 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
     public final boolean authenticate(TaskListener listener) {
         setListener(listener);
         return authenticate();
+    }
+
+    /**
+     * Same as {@link SSHUserPrivateKey#getPrivateKeys} but backward compatible for old implementations.
+     * @since 1.3
+     */
+    @SuppressWarnings("deprecation")
+    public static List<String> getPrivateKeys(SSHUserPrivateKey user) {
+        try {
+            return user.getPrivateKeys();
+        } catch (AbstractMethodError x) {
+            return Collections.singletonList(user.getPrivateKey());
+        }
     }
 
     /**

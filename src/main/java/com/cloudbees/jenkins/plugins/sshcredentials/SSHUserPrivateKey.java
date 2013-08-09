@@ -58,6 +58,7 @@ public interface SSHUserPrivateKey extends SSHUser {
      *
      * @return a collection of keys to try in order for authentication.
      * @since 0.5
+     * @see SSHAuthenticator#getPrivateKeys
      */
     @NonNull
     List<String> getPrivateKeys();

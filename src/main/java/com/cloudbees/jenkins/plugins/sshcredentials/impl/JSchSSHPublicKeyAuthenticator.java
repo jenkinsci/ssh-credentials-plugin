@@ -52,7 +52,7 @@ public class JSchSSHPublicKeyAuthenticator extends SSHAuthenticator<JSchConnecto
             final Secret userPassphrase = user.getPassphrase();
             final String passphrase = userPassphrase == null ? null : userPassphrase.getPlainText();
             byte[] passphraseBytes = passphrase == null ? null : passphrase.getBytes("UTF-8");
-            for (String privateKey : user.getPrivateKeys()) {
+            for (String privateKey : getPrivateKeys(user)) {
                 getConnection().getJSch().addIdentity(user.getUsername(), privateKey.getBytes("UTF-8"), null,
                         passphraseBytes);
             }
