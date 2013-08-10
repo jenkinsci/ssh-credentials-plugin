@@ -225,6 +225,12 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             this.privateKey = privateKey;
         }
 
+        @NonNull
+        public String getPrivateKey() {
+            List<String> privateKeys = getPrivateKeys();
+            return privateKeys.isEmpty() ? "" : privateKeys.get(0);
+        }
+
         /**
          * {@inheritDoc}
          */
