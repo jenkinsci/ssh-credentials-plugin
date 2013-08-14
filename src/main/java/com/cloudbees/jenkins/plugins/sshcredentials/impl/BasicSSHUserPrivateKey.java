@@ -35,6 +35,7 @@ import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.remoting.VirtualChannel;
 import hudson.util.Secret;
+import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
 import org.kohsuke.putty.PuTTYKey;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -74,14 +75,16 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
     /**
      * The private key.
      */
-    private transient volatile List<String> privateKeys;
+    @GuardedBy("this")
+    private transient List<String> privateKeys;
 
     /**
      * The maximum amount of time to cache the private keys before refreshing.
      *
      * @since 1.1
      */
-    private transient volatile long privateKeysCachedUntil;
+    @GuardedBy("this")
+    private transient long privateKeysLastModified;
 
     /**
      * Constructor for stapler.
@@ -111,8 +114,9 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
     }
 
     @NonNull
-    public List<String> getPrivateKeys() {
-        if (privateKeys == null || privateKeys.isEmpty() || System.currentTimeMillis() > privateKeysCachedUntil) {
+    public synchronized List<String> getPrivateKeys() {
+        long lastModified = privateKeySource.getPrivateKeysLastModified();
+        if (privateKeys == null || privateKeys.isEmpty() || lastModified > privateKeysLastModified) {
             List<String> privateKeys = new ArrayList<String>();
             for (String privateKey : privateKeySource.getPrivateKeys()) {
                 try {
@@ -130,8 +134,8 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                     // ignore
                 }
             }
-            this.privateKeys = privateKeys; // idempotent write
-            this.privateKeysCachedUntil = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(30);
+            this.privateKeys = privateKeys;
+            this.privateKeysLastModified = lastModified;
         }
         return privateKeys;
     }
@@ -201,6 +205,17 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          */
         @NonNull
         public abstract List<String> getPrivateKeys();
+
+        /**
+         * Returns a revision count or a timestamp (in either case strictly increasing after changes to the private
+         * keys)
+         *
+         * @return a revision count or a timestamp.
+         * @since 1.4
+         */
+        public long getPrivateKeysLastModified() {
+            return 1; // pick a default that is greater than the field initializer for constant sources.
+        }
     }
 
     /**
@@ -259,7 +274,26 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          */
         private static final long serialVersionUID = 1L;
 
+        /**
+         * Our logger
+         */
+        private static final Logger LOGGER = Logger.getLogger(FileOnMasterPrivateKeySource.class.getName());
+
+        /**
+         * The path to the private key.
+         */
         private final String privateKeyFile;
+
+        /**
+         * When any of the key files was last modified.
+         */
+        private transient volatile long lastModified;
+
+        /**
+         * When we will next try a refresh of the status.
+         */
+        private transient volatile long nextCheckLastModified;
+
 
         @DataBoundConstructor
         public FileOnMasterPrivateKeySource(String privateKeyFile) {
@@ -276,11 +310,9 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                 return Collections
                         .singletonList(Hudson.getInstance().getRootPath().act(new ReadFileOnMaster(privateKeyFile)));
             } catch (IOException e) {
-                Logger.getLogger(getClass().getName())
-                        .log(Level.WARNING, "Could not read private key file " + privateKeyFile, e);
+                LOGGER.log(Level.WARNING, "Could not read private key file " + privateKeyFile, e);
             } catch (InterruptedException e) {
-                Logger.getLogger(getClass().getName())
-                        .log(Level.WARNING, "Could not read private key file " + privateKeyFile, e);
+                LOGGER.log(Level.WARNING, "Could not read private key file " + privateKeyFile, e);
             }
             return Collections.emptyList();
         }
@@ -292,6 +324,23 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          */
         public String getPrivateKeyFile() {
             return privateKeyFile;
+        }
+
+        @Override
+        public long getPrivateKeysLastModified() {
+            if (nextCheckLastModified > System.currentTimeMillis() || lastModified < 0) {
+                try {
+                    lastModified = Hudson.getInstance().getRootPath().act(new LastModifiedOnMaster(privateKeyFile));
+                } catch (NullPointerException e) {
+                    LOGGER.log(Level.WARNING, "Could not stat private key file " + privateKeyFile, e);
+                } catch (IOException e) {
+                    LOGGER.log(Level.WARNING, "Could not stat private key file " + privateKeyFile, e);
+                } catch (InterruptedException e) {
+                    LOGGER.log(Level.WARNING, "Could not stat private key file " + privateKeyFile, e);
+                }
+                nextCheckLastModified = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(30);
+            }
+            return lastModified;
         }
 
         /**
@@ -319,6 +368,21 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          */
         private static final long serialVersionUID = 1L;
 
+        /**
+         * Our logger
+         */
+        private static final Logger LOGGER = Logger.getLogger(UsersPrivateKeySource.class.getName());
+
+        /**
+         * When any of the key files was last modified.
+         */
+        private transient volatile long lastModified;
+
+        /**
+         * When we will next try a refresh of the status.
+         */
+        private transient volatile long nextCheckLastModified;
+
         @DataBoundConstructor
         public UsersPrivateKeySource() {
         }
@@ -332,13 +396,29 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             try {
                 return Hudson.getInstance().getRootPath().act(new ReadKeyOnMaster());
             } catch (IOException e) {
-                Logger.getLogger(getClass().getName()).log(Level.WARNING, "Could not read private key", e);
+                LOGGER.log(Level.WARNING, "Could not read private key", e);
             } catch (InterruptedException e) {
-                Logger.getLogger(getClass().getName()).log(Level.WARNING, "Could not read private key", e);
+                LOGGER.log(Level.WARNING, "Could not read private key", e);
             }
             return Collections.emptyList();
         }
 
+        @Override
+        public long getPrivateKeysLastModified() {
+            if (nextCheckLastModified > System.currentTimeMillis() || lastModified < 0) {
+                try {
+                    lastModified = Hudson.getInstance().getRootPath().act(new KeyLastModifiedOnMaster());
+                } catch (NullPointerException e) {
+                    LOGGER.log(Level.WARNING, "Could not stat private keys", e);
+                } catch (IOException e) {
+                    LOGGER.log(Level.WARNING, "Could not stat private keys", e);
+                } catch (InterruptedException e) {
+                    LOGGER.log(Level.WARNING, "Could not stat private keys", e);
+                }
+                nextCheckLastModified = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(30);
+            }
+            return lastModified;
+        }
 
         /**
          * {@inheritDoc}
@@ -394,6 +474,55 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                 }
             }
             return result;
+        }
+    }
+
+    public static class LastModifiedOnMaster implements FilePath.FileCallable<Long> {
+
+        /**
+         * Ensure consistent serialization.
+         */
+        private static final long serialVersionUID = 2L;
+
+        private final List<String> files;
+
+        public LastModifiedOnMaster(String... files) {
+            this(Arrays.asList(files));
+        }
+
+        public LastModifiedOnMaster(List<String> files) {
+            this.files = new ArrayList<String>(files);
+        }
+
+        public Long invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
+            long lastModified = Long.MIN_VALUE;
+            for (String path : files) {
+                File file = new File(path);
+                if (file.exists()) {
+                    lastModified = Math.max(lastModified, file.lastModified());
+                }
+            }
+            return lastModified;
+        }
+    }
+
+    public static class KeyLastModifiedOnMaster implements FilePath.FileCallable<Long> {
+
+        /**
+         * Ensure consistent serialization.
+         */
+        private static final long serialVersionUID = 2L;
+
+        public Long invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
+            long lastModified = Long.MIN_VALUE;
+            File sshHome = new File(new File(System.getProperty("user.home")), ".ssh");
+            for (String keyName : Arrays.asList("id_rsa", "id_dsa", "identity")) {
+                File file = new File(sshHome, keyName);
+                if (file.exists()) {
+                    lastModified = Math.max(lastModified, file.lastModified());
+                }
+            }
+            return lastModified;
         }
     }
 }
