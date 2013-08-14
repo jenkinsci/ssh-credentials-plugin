@@ -153,7 +153,7 @@ public class JSchSSHPublicKeyAuthenticatorTest extends HudsonTestCase {
             assertThat(instance.isAuthenticated(), is(true));
             assertThat(connector.getSession().isConnected(), is(false));
             connector.getSession().setConfig("StrictHostKeyChecking", "no");
-            connector.getSession().connect((int) TimeUnit.SECONDS.toMillis(10));
+            connector.getSession().connect((int) TimeUnit.SECONDS.toMillis(30));
             assertThat(connector.getSession().isConnected(), is(true));
         } finally {
             try {
@@ -184,7 +184,7 @@ public class JSchSSHPublicKeyAuthenticatorTest extends HudsonTestCase {
             assertThat(instance.isAuthenticated(), is(true));
             assertThat(connector.getSession().isConnected(), is(false));
             connector.getSession().setConfig("StrictHostKeyChecking", "no");
-            connector.getSession().connect((int) TimeUnit.SECONDS.toMillis(10));
+            connector.getSession().connect((int) TimeUnit.SECONDS.toMillis(30));
             assertThat(connector.getSession().isConnected(), is(true));
         } finally {
             try {
