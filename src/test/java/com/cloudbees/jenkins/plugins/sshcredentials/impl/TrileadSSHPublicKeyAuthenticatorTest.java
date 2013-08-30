@@ -198,4 +198,51 @@ public class TrileadSSHPublicKeyAuthenticatorTest extends HudsonTestCase {
             }
         }
     }
+
+    public void testAltUsername() throws Exception {
+        SshServer sshd = SshServer.setUpDefaultServer();
+        sshd.setPort(0);
+        sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
+        sshd.setPublickeyAuthenticator(new PublickeyAuthenticator() {
+            public boolean authenticate(String username, PublicKey key, ServerSession session) {
+                return username.equals("bill");
+            }
+        });
+        sshd.setUserAuthFactories(Arrays.<NamedFactory<UserAuth>>asList(new UserAuthPublicKey.Factory()));
+        try {
+            sshd.start();
+            connection = new Connection("localhost", sshd.getPort());
+            connection.connect(new ServerHostKeyVerifier() {
+                public boolean verifyServerHostKey(String hostname, int port, String serverHostKeyAlgorithm,
+                                                   byte[] serverHostKey)
+                        throws Exception {
+                    return true;
+                }
+            });
+            SSHAuthenticator instance = SSHAuthenticator.newInstance(connection, user, null);
+            assertThat(instance.getAuthenticationMode(), is(SSHAuthenticator.Mode.AFTER_CONNECT));
+            assertThat(instance.canAuthenticate(), is(true));
+            assertThat(instance.authenticate(), is(false));
+            assertThat(instance.isAuthenticated(), is(false));
+            connection = new Connection("localhost", sshd.getPort());
+            connection.connect(new ServerHostKeyVerifier() {
+                public boolean verifyServerHostKey(String hostname, int port, String serverHostKeyAlgorithm,
+                                                   byte[] serverHostKey)
+                        throws Exception {
+                    return true;
+                }
+            });
+            instance = SSHAuthenticator.newInstance(connection, user, "bill");
+            assertThat(instance.getAuthenticationMode(), is(SSHAuthenticator.Mode.AFTER_CONNECT));
+            assertThat(instance.canAuthenticate(), is(true));
+            assertThat(instance.authenticate(), is(true));
+            assertThat(instance.isAuthenticated(), is(true));
+        } finally {
+            try {
+                sshd.stop(true);
+            } catch (Throwable t) {
+                Logger.getLogger(getClass().getName()).log(Level.WARNING, "Problems shutting down ssh server", t);
+            }
+        }
+    }
 }

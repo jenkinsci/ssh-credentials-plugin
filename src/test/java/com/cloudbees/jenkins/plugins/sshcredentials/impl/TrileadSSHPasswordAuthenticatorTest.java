@@ -107,12 +107,16 @@ public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
     }
 
     private SshServer createPasswordAuthenticatedSshServer() {
+        return createPasswordAuthenticatedSshServer(null);
+    }
+
+    private SshServer createPasswordAuthenticatedSshServer(final String username) {
         SshServer sshd = SshServer.setUpDefaultServer();
         sshd.setPort(0);
         sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
         sshd.setPasswordAuthenticator(new PasswordAuthenticator() {
-            public boolean authenticate(String username, String password, ServerSession session) {
-                return "foomanchu".equals(password);
+            public boolean authenticate(String _username, String password, ServerSession session) {
+                return (username == null || username.equals(_username)) && "foomanchu".equals(password);
             }
         });
         sshd.setUserAuthFactories(Arrays.<NamedFactory<UserAuth>>asList(new UserAuthPassword.Factory()));
@@ -125,6 +129,25 @@ public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
         connection = new Connection("localhost", sshd.getPort());
         connection.connect(new NoVerifier());
         SSHAuthenticator instance = SSHAuthenticator.newInstance(connection, user);
+        assertThat(instance.getAuthenticationMode(), is(SSHAuthenticator.Mode.AFTER_CONNECT));
+        assertThat(instance.canAuthenticate(), is(true));
+        assertThat(instance.authenticate(), is(true));
+        assertThat(instance.isAuthenticated(), is(true));
+    }
+
+    public void testFactoryAltUsername() throws Exception {
+        sshd = createPasswordAuthenticatedSshServer("bill");
+        sshd.start();
+        connection = new Connection("localhost", sshd.getPort());
+        connection.connect(new NoVerifier());
+        SSHAuthenticator instance = SSHAuthenticator.newInstance(connection, user, null);
+        assertThat(instance.getAuthenticationMode(), is(SSHAuthenticator.Mode.AFTER_CONNECT));
+        assertThat(instance.canAuthenticate(), is(true));
+        assertThat(instance.authenticate(), is(false));
+        assertThat(instance.isAuthenticated(), is(false));
+        connection = new Connection("localhost", sshd.getPort());
+        connection.connect(new NoVerifier());
+        instance = SSHAuthenticator.newInstance(connection, user, "bill");
         assertThat(instance.getAuthenticationMode(), is(SSHAuthenticator.Mode.AFTER_CONNECT));
         assertThat(instance.canAuthenticate(), is(true));
         assertThat(instance.authenticate(), is(true));

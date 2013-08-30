@@ -42,13 +42,13 @@ import net.jcip.annotations.GuardedBy;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.anyOf;
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
-import java.util.Collections;
 
 /**
  * Abstraction for something that can authenticate an SSH connection.
@@ -68,6 +68,8 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      */
     @NonNull
     private final U user;
+
+    private final String username;
 
     /**
      * Lock to prevent threading issues.
@@ -95,12 +97,38 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      * Constructor.
      *
      * @param connection the connection we will be authenticating.
+     * @param user       the user we will be authenticating as.
+     * @deprecated use {@link #SSHAuthenticator(Object, com.cloudbees.plugins.credentials.common.StandardUsernameCredentials, String)}
      */
+    @Deprecated
     protected SSHAuthenticator(@NonNull C connection, @NonNull U user) {
+        this(connection, user, null);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param connection the connection we will be authenticating.
+     * @param user       the user we will be authenticating as.
+     * @param username   the username we will be authenticating as or {@code null} to use the users username.
+     * @since 1.4
+     */
+    protected SSHAuthenticator(@NonNull C connection, @NonNull U user, @CheckForNull String username) {
         connection.getClass(); // throw NPE if null
         user.getClass(); // throw NPE if null
         this.connection = connection;
         this.user = user;
+        this.username = username;
+    }
+
+    /**
+     * Returns the username to authenticate as.
+     *
+     * @return the username to authenticate as.
+     * @since 1.4
+     */
+    public String getUsername() {
+        return username == null ? getUser().getUsername() : username;
     }
 
     @NonNull
@@ -138,6 +166,26 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
     public static <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(@NonNull C connection,
                                                                                                 @NonNull U user)
             throws InterruptedException, IOException {
+        return newInstance(connection, user, null);
+    }
+
+    /**
+     * Creates an authenticator that may be able to authenticate the supplied connection with the supplied user.
+     *
+     * @param connection the connection to authenticate on.
+     * @param user       the user to authenticate with.
+     * @param username   the username or {@code null} to fall back to the username in the user parameter.
+     * @param <C>        the type of connection.
+     * @param <U>        the type of user.
+     * @return a {@link SSHAuthenticator} that may or may not be able to successfully authenticate.
+     * @since 1.4
+     */
+    @NonNull
+    public static <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(@NonNull C connection,
+                                                                                                @NonNull U user,
+                                                                                                @CheckForNull String
+                                                                                                        username)
+            throws InterruptedException, IOException {
         connection.getClass(); // throw NPE if null
         user.getClass(); // throw NPE if null
         Collection<SSHAuthenticatorFactory> factories;
@@ -155,12 +203,12 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
         }
 
         for (SSHAuthenticatorFactory factory : factories) {
-            SSHAuthenticator<C, U> result = factory.newInstance(connection, user);
+            SSHAuthenticator<C, U> result = factory.newInstance(connection, user, username);
             if (result != null && result.canAuthenticate()) {
                 return result;
             }
         }
-        return new SSHAuthenticator<C, U>(connection, user) {
+        return new SSHAuthenticator<C, U>(connection, user, username) {
             @Override
             protected boolean doAuthenticate() {
                 return false;
@@ -168,10 +216,13 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
         };
     }
 
-    /** @deprecated Use {@link #newInstance(Object, StandardUsernameCredentials)} instead. */
+    /**
+     * @deprecated Use {@link #newInstance(Object, StandardUsernameCredentials)} instead.
+     */
     @Deprecated
-    public static SSHAuthenticator<Object,StandardUsernameCredentials> newInstance(Object connection, SSHUser user) throws InterruptedException, IOException {
-        return newInstance(connection, (StandardUsernameCredentials) user);
+    public static SSHAuthenticator<Object, StandardUsernameCredentials> newInstance(Object connection, SSHUser user)
+            throws InterruptedException, IOException {
+        return newInstance(connection, (StandardUsernameCredentials) user, null);
     }
 
     /**
@@ -221,10 +272,12 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
 
 
     /**
-     * Returns a {@link CredentialsMatcher} that matches the generic types of credential that are valid for use over SSH.
+     * Returns a {@link CredentialsMatcher} that matches the generic types of credential that are valid for use over
+     * SSH.
      * When you know the connection type you will be using, it is better to use {@link #matcher(Class)}.
      *
-     * @return a {@link CredentialsMatcher} that matches the generic types of credential that are valid for use over SSH.
+     * @return a {@link CredentialsMatcher} that matches the generic types of credential that are valid for use over
+     *         SSH.
      */
     public static CredentialsMatcher matcher() {
         return anyOf(
@@ -377,6 +430,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
 
     /**
      * Same as {@link SSHUserPrivateKey#getPrivateKeys} but backward compatible for old implementations.
+     *
      * @since 1.3
      */
     @SuppressWarnings("deprecation")

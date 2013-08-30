@@ -6,7 +6,9 @@ import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticatorFactory;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.jcraft.jsch.JSchException;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.util.Secret;
 
@@ -30,7 +32,18 @@ public class JSchSSHPublicKeyAuthenticator extends SSHAuthenticator<JSchConnecto
      * @param connector the connection we will be authenticating.
      */
     public JSchSSHPublicKeyAuthenticator(JSchConnector connector, SSHUserPrivateKey user) {
-        super(connector, user);
+        this(connector, user, null);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param connector the connection we will be authenticating.
+     * @since 1.4
+     */
+    public JSchSSHPublicKeyAuthenticator(@NonNull JSchConnector connector, @NonNull SSHUserPrivateKey user,
+                                         @CheckForNull String username) {
+        super(connector, user, username);
     }
 
     /**
@@ -53,7 +66,7 @@ public class JSchSSHPublicKeyAuthenticator extends SSHAuthenticator<JSchConnecto
             final String passphrase = userPassphrase == null ? null : userPassphrase.getPlainText();
             byte[] passphraseBytes = passphrase == null ? null : passphrase.getBytes("UTF-8");
             for (String privateKey : getPrivateKeys(user)) {
-                getConnection().getJSch().addIdentity(user.getUsername(), privateKey.getBytes("UTF-8"), null,
+                getConnection().getJSch().addIdentity(getUsername(), privateKey.getBytes("UTF-8"), null,
                         passphraseBytes);
             }
 
@@ -85,9 +98,22 @@ public class JSchSSHPublicKeyAuthenticator extends SSHAuthenticator<JSchConnecto
         @SuppressWarnings("unchecked")
         protected <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(@NonNull C session,
                                                                                                 @NonNull U user) {
+            return newInstance(session, user, null);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Nullable
+        @Override
+        @SuppressWarnings("unchecked")
+        protected <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(@NonNull C session,
+                                                                                                @NonNull U user,
+                                                                                                @CheckForNull String
+                                                                                                        username) {
             if (supports(session.getClass(), user.getClass())) {
                 return (SSHAuthenticator<C, U>) new JSchSSHPublicKeyAuthenticator((JSchConnector) session,
-                        (SSHUserPrivateKey) user);
+                        (SSHUserPrivateKey) user, username);
             }
             return null;
         }

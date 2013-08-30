@@ -7,7 +7,9 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UIKeyboardInteractive;
 import com.jcraft.jsch.UserInfo;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 
 import java.util.logging.Logger;
@@ -25,7 +27,13 @@ public class JSchSSHPasswordAuthenticator extends SSHAuthenticator<JSchConnector
 
     protected JSchSSHPasswordAuthenticator(@NonNull JSchConnector connection,
                                            @NonNull StandardUsernamePasswordCredentials user) {
-        super(connection, user);
+        this(connection, user, null);
+    }
+
+    protected JSchSSHPasswordAuthenticator(@NonNull JSchConnector connection,
+                                           @NonNull StandardUsernamePasswordCredentials user,
+                                           @CheckForNull String username) {
+        super(connection, user, username);
     }
 
     @NonNull
@@ -59,11 +67,24 @@ public class JSchSSHPasswordAuthenticator extends SSHAuthenticator<JSchConnector
          */
         @Override
         @SuppressWarnings("unchecked")
-        protected <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(@NonNull C connection,
+        protected <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(@NonNull C session,
                                                                                                 @NonNull U user) {
-            if (supports(connection.getClass(), user.getClass())) {
-                return (SSHAuthenticator<C, U>) new JSchSSHPasswordAuthenticator((JSchConnector) connection,
-                        (StandardUsernamePasswordCredentials) user);
+            return newInstance(session, user, null);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Nullable
+        @Override
+        @SuppressWarnings("unchecked")
+        protected <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(@NonNull C session,
+                                                                                                @NonNull U user,
+                                                                                                @CheckForNull String
+                                                                                                        username) {
+            if (supports(session.getClass(), user.getClass())) {
+                return (SSHAuthenticator<C, U>) new JSchSSHPasswordAuthenticator((JSchConnector) session,
+                        (StandardUsernamePasswordCredentials) user, username);
             }
             return null;
         }

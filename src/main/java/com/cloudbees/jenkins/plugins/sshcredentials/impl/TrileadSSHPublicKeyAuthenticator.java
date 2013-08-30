@@ -28,7 +28,9 @@ import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticatorFactory;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.trilead.ssh2.Connection;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.util.Secret;
 
@@ -54,7 +56,18 @@ public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connectio
      * @param connection the connection we will be authenticating.
      */
     public TrileadSSHPublicKeyAuthenticator(Connection connection, SSHUserPrivateKey user) {
-        super(connection, user);
+        this(connection, user, null);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param connection the connection we will be authenticating.
+     */
+    public TrileadSSHPublicKeyAuthenticator(@NonNull Connection connection,
+                                            @NonNull SSHUserPrivateKey user,
+                                            @CheckForNull String username) {
+        super(connection, user, username);
     }
 
     /**
@@ -71,7 +84,7 @@ public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connectio
     }
 
     private List<String> getRemainingAuthMethods() throws IOException {
-        return Arrays.asList(getConnection().getRemainingAuthMethods(getUser().getUsername()));
+        return Arrays.asList(getConnection().getRemainingAuthMethods(getUsername()));
     }
 
     /**
@@ -80,7 +93,7 @@ public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connectio
     @Override
     protected boolean doAuthenticate() {
         final SSHUserPrivateKey user = getUser();
-        final String username = user.getUsername();
+        final String username = getUsername();
         try {
             final Connection connection = getConnection();
             final Secret userPassphrase = user.getPassphrase();
@@ -125,9 +138,22 @@ public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connectio
         @SuppressWarnings("unchecked")
         protected <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(@NonNull C connection,
                                                                                                 @NonNull U user) {
+            return newInstance(connection, user, null);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Nullable
+        @Override
+        @SuppressWarnings("unchecked")
+        protected <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(@NonNull C connection,
+                                                                                                @NonNull U user,
+                                                                                                @CheckForNull String
+                                                                                                        username) {
             if (supports(connection.getClass(), user.getClass())) {
                 return (SSHAuthenticator<C, U>) new TrileadSSHPublicKeyAuthenticator((Connection) connection,
-                        (SSHUserPrivateKey) user);
+                        (SSHUserPrivateKey) user, username);
             }
             return null;
         }

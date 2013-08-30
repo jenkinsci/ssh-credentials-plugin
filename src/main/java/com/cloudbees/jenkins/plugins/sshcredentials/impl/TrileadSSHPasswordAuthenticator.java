@@ -29,7 +29,9 @@ import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.InteractiveCallback;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 
 import java.io.IOException;
@@ -52,9 +54,23 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
      * Constructor.
      *
      * @param connection the connection we will be authenticating.
+     * @deprecated
      */
+    @Deprecated
     public TrileadSSHPasswordAuthenticator(Connection connection, StandardUsernamePasswordCredentials user) {
-        super(connection, user);
+        this(connection, user, null);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param connection the connection we will be authenticating.
+     * @since 1.4
+     */
+    public TrileadSSHPasswordAuthenticator(@NonNull Connection connection,
+                                           @NonNull StandardUsernamePasswordCredentials user,
+                                           @CheckForNull String username) {
+        super(connection, user, username);
     }
 
     /**
@@ -63,7 +79,7 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
     @Override
     public boolean canAuthenticate() {
         try {
-            for (String authMethod : getConnection().getRemainingAuthMethods(getUser().getUsername())) {
+            for (String authMethod : getConnection().getRemainingAuthMethods(getUsername())) {
                 if ("password".equals(authMethod)) {
                     // prefer password
                     return true;
@@ -84,7 +100,7 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
     @Override
     protected boolean doAuthenticate() {
         final StandardUsernamePasswordCredentials user = getUser();
-        final String username = user.getUsername();
+        final String username = getUsername();
 
         try {
             final Connection connection = getConnection();
@@ -147,12 +163,24 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
          * {@inheritDoc}
          */
         @Override
-        @SuppressWarnings("unchecked")
         protected <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(@NonNull C connection,
                                                                                                 @NonNull U user) {
+            return newInstance(connection, user, null);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Nullable
+        @Override
+        @SuppressWarnings("unchecked")
+        protected <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(@NonNull C connection,
+                                                                                                @NonNull U user,
+                                                                                                @CheckForNull String
+                                                                                                        username) {
             if (supports(connection.getClass(), user.getClass())) {
                 return (SSHAuthenticator<C, U>) new TrileadSSHPasswordAuthenticator((Connection) connection,
-                        (StandardUsernamePasswordCredentials) user);
+                        (StandardUsernamePasswordCredentials) user, username);
             }
             return null;
         }

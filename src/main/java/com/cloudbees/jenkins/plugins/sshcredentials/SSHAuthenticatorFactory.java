@@ -24,6 +24,7 @@
 package com.cloudbees.jenkins.plugins.sshcredentials;
 
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.ExtensionPoint;
@@ -56,6 +57,27 @@ public abstract class SSHAuthenticatorFactory implements ExtensionPoint, Seriali
     protected abstract <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(
             @NonNull C connection,
             @NonNull U user);
+
+    /**
+     * Returns an instance of {@link SSHAuthenticator} for the supplied connection and user, or {@code null} if
+     * the factory does not support the connection and user combination.
+     *
+     * @param connection the connection.
+     * @param user       the user.
+     * @param username   the username or {@code null} to fall back to the username in the user parameter.
+     * @param <C>        the type of connection.
+     * @param <U>        the type of user.
+     * @return {@code null} if the connection or user is not supported by this factory, or a {@link SSHAuthenticator}
+     *         instance bound to the supplied connection and user.
+     * @since 1.4
+     */
+    @Nullable
+    protected <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(
+            @NonNull C connection,
+            @NonNull U user,
+            @CheckForNull String username) {
+        return newInstance(connection, user);
+    }
 
     /**
      * Returns {@code true} if and only if the supplied connection class and user class are supported by this factory.
