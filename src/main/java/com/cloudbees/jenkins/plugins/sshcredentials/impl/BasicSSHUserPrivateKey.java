@@ -326,6 +326,17 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             return privateKeyFile;
         }
 
+        private Object readResolve() {
+            if (privateKeyFile != null
+                    && privateKeyFile.startsWith("---")
+                    && privateKeyFile.contains("---BEGIN")
+                    && privateKeyFile.contains("---END")) {
+                // this is a borked upgrade, not actually the file name but is actually the key contents
+                return new DirectEntryPrivateKeySource(privateKeyFile);
+            }
+            return this;
+        }
+
         @Override
         public long getPrivateKeysLastModified() {
             if (nextCheckLastModified > System.currentTimeMillis() || lastModified < 0) {
