@@ -92,6 +92,13 @@
       <version>0.1.42</version>
       <optional>true</optional>
     </dependency>
+
+    <dependency>
+      <groupId>ch.ethz.ganymed</groupId>
+      <artifactId>ganymed-ssh2</artifactId>
+      <version>261</version>
+    </dependency>
+      
     <!-- plugin dependencies -->
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
