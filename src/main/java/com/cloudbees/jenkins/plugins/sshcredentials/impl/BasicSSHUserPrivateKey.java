@@ -597,9 +597,10 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                     return credentials;
                 }
             }
+            final Secret passphrase = credentials.getPassphrase();
             return new BasicSSHUserPrivateKey(credentials.getScope(), credentials.getId(), credentials.getUsername(),
                     new DirectEntryPrivateKeySource(credentials.getPrivateKeys()),
-                    credentials.getPassphrase().getEncryptedValue(), credentials.getDescription());
+                    passphrase == null ? null : passphrase.getEncryptedValue(), credentials.getDescription());
         }
     }
 }
