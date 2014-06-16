@@ -26,6 +26,7 @@ package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.CredentialsSnapshotTaker;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
@@ -37,6 +38,7 @@ import hudson.remoting.VirtualChannel;
 import hudson.util.Secret;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.putty.PuTTYKey;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -216,6 +218,17 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         public long getPrivateKeysLastModified() {
             return 1; // pick a default that is greater than the field initializer for constant sources.
         }
+
+        /**
+         * Returns {@code true} if and only if the source is self contained.
+         *
+         * @return {@code true} if and only if the source is self contained.
+         * @since 1.7
+         */
+        public boolean isSnapshotSource() {
+            return false;
+        }
+
     }
 
     /**
@@ -240,13 +253,17 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             this.privateKey = privateKey;
         }
 
+        public DirectEntryPrivateKeySource(List<String> privateKeys) {
+            this(StringUtils.join(privateKeys, "\f"));
+        }
+
         /**
          * {@inheritDoc}
          */
         @NonNull
         @Override
         public List<String> getPrivateKeys() {
-            return Collections.singletonList(privateKey);
+            return Arrays.asList(StringUtils.split(privateKey, "\f"));
         }
 
         /**
@@ -257,6 +274,14 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         @SuppressWarnings("unused") // used by Jelly EL
         public String getPrivateKey() {
             return privateKey;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean isSnapshotSource() {
+            return true;
         }
 
         /**
@@ -544,6 +569,37 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                 }
             }
             return lastModified;
+        }
+    }
+
+    /**
+     * @since 1.7
+     */
+    @Extension
+    public static class CredentialsSnapshotTakerImpl extends CredentialsSnapshotTaker<SSHUserPrivateKey> {
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Class<SSHUserPrivateKey> type() {
+            return SSHUserPrivateKey.class;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public SSHUserPrivateKey snapshot(SSHUserPrivateKey credentials) {
+            if (credentials instanceof BasicSSHUserPrivateKey) {
+                final PrivateKeySource keySource = ((BasicSSHUserPrivateKey) credentials).getPrivateKeySource();
+                if (keySource.isSnapshotSource()) {
+                    return credentials;
+                }
+            }
+            return new BasicSSHUserPrivateKey(credentials.getScope(), credentials.getId(), credentials.getUsername(),
+                    new DirectEntryPrivateKeySource(credentials.getPrivateKeys()),
+                    credentials.getPassphrase().getEncryptedValue(), credentials.getDescription());
         }
     }
 }
