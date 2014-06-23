@@ -195,6 +195,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
         } else {
             // if running on the slave, bring these factories over here
             factories = Channel.current().call(new Callable<Collection<SSHAuthenticatorFactory>, IOException>() {
+                private static final long serialVersionUID = 1;
                 public Collection<SSHAuthenticatorFactory> call() throws IOException {
                     return new ArrayList<SSHAuthenticatorFactory>(
                             Jenkins.getInstance().getExtensionList(SSHAuthenticatorFactory.class));
