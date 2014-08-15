@@ -35,6 +35,7 @@ import hudson.Extension;
 import hudson.util.Secret;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -102,15 +103,24 @@ public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connectio
             Collection<String> availableMethods = getRemainingAuthMethods();
             if (availableMethods.contains("publickey")) {
                 int count = 0;
+                List<IOException> ioe = new ArrayList<IOException>();
                 for (String privateKey : getPrivateKeys(user)) {
-                    if (connection.authenticateWithPublicKey(username, privateKey.toCharArray(), passphrase)) {
-                        LOGGER.fine("Authentication with 'publickey' succeeded.");
-                        return true;
+                    try {
+                        if (connection.authenticateWithPublicKey(username, privateKey.toCharArray(), passphrase)) {
+                            LOGGER.fine("Authentication with 'publickey' succeeded.");
+                            return true;
+                        }
+                    } catch (IOException e) {
+                        ioe.add(e);
                     }
                     count++;
                     getListener()
                             .error("Server rejected the %d private key(s) for %s (credentialId:%s/method:publickey)",
                                     count, username, user.getId());
+                }
+                for (IOException e : ioe) {
+                    e.printStackTrace(getListener()
+                            .error("Failed to authenticate as %s with credential=%s", username, getUser().getId()));
                 }
                 return false;
             } else {
