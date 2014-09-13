@@ -513,7 +513,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         public List<String> invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
             List<String> result = new ArrayList<String>();
             File sshHome = new File(new File(System.getProperty("user.home")), ".ssh");
-            for (String keyName : Arrays.asList("id_rsa", "id_dsa", "identity")) {
+            for (String keyName : Arrays.asList("id_ecdsa", "id_rsa", "id_dsa", "identity")) {
                 File key = new File(sshHome, keyName);
                 if (key.isFile()) {
                     result.add(FileUtils.readFileToString(key));
@@ -562,7 +562,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         public Long invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
             long lastModified = Long.MIN_VALUE;
             File sshHome = new File(new File(System.getProperty("user.home")), ".ssh");
-            for (String keyName : Arrays.asList("id_rsa", "id_dsa", "identity")) {
+            for (String keyName : Arrays.asList("id_ecdsa", "id_rsa", "id_dsa", "identity")) {
                 File file = new File(sshHome, keyName);
                 if (file.exists()) {
                     lastModified = Math.max(lastModified, file.lastModified());
