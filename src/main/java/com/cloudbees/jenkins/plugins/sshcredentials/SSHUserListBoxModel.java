@@ -4,14 +4,11 @@ import com.cloudbees.plugins.credentials.CredentialsMatcher;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.AbstractIdCredentialsListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
+import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Util;
-import hudson.model.Descriptor;
-import hudson.model.Item;
-import hudson.model.Job;
 import hudson.security.ACL;
-import hudson.util.ListBoxModel;
 import jenkins.model.Jenkins;
 
 import java.util.Arrays;
@@ -19,71 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static com.cloudbees.plugins.credentials.CredentialsMatchers.filter;
-
-/**
- * {@link ListBoxModel} with {@link StandardUsernameCredentials} support.
- * <p/>
- * This class is convenient for providing the config.groovy/.jelly fragment for a collection of {@link StandardUsernameCredentials} objects.
- * <p/>
- * If you want to let the user configure an {@link StandardUsernameCredentials} object, do the following:
- * <p/>
- * First, create a field that stores the credential ID and defines a corresponding parameter in the constructor:
- * <p/>
- * <pre>
- * private String credentialId;
- *
- * &#64;DataBoundConstructor
- * public MyModel( .... , String credentialId) {
- *     this.credentialId = credentialId;
- *     ...
- * }
- * </pre>
- * <p/>
- * Your <tt>config.groovy</tt> should have the following entry to render a drop-down list box:
- * <p/>
- * <pre>
- * f.entry(title:_("Credentials"), field:"credentialId") {
- *     f.select()
- * }
- * </pre>
- * <p/>
- * Finally, your {@link Descriptor} implementation should have the <tt>doFillCredentialsIdItems</tt> method, which
- * lists up the credentials available in this context:
- * <p/>
- * <pre>
- * public SSHUserListBoxModel doFillCredentialsIdItems() {
- *     return new SSHUserListBoxModel()
- *             .addCollection(CredentialsProvider.lookupCredentials(SSHUser.class,...));
- * }
- * </pre>
- * <p/>
- * <p/>
- * Exactly which overloaded version of the {@link CredentialsProvider#lookupCredentials(Class)} depends on
- * the context in which your model operates. Here are a few common examples:
- * <p/>
- * <dl>
- * <dt>System-level settings
- * <dd>
- * If your model is a singleton in the whole Jenkins instance, things that belong to the root {@link Jenkins}
- * (such as slaves), or do not have any ancestors serving as the context, then use {@link #addSystemScopeCredentials()}.
- * <p/>
- * <dt>Job-level settings
- * <dd>
- * If your model is a configuration fragment added to a {@link Item} (such as its major subtype {@link Job}),
- * then use that {@link Item} as the context and call {@link CredentialsProvider#lookupCredentials(Class, Item)}
- * See below:
- * <p/>
- * <pre>
- * public SSHUserListBoxModel doFillCredentialsIdItems(@AncestorInPath AbstractProject context) {
- *     return new SSHUserListBoxModel().addCollection(
- *         CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class, context, auth, domainRequirements)));
- * }
- * </pre>
- * </dl>
- *
- * @author Kohsuke Kawaguchi
- */
+/** @deprecated Use {@link StandardUsernameListBoxModel} with {@link SSHAuthenticator} instead. */
 public class SSHUserListBoxModel extends AbstractIdCredentialsListBoxModel<SSHUserListBoxModel,StandardUsernameCredentials> {
     /**
      * {@inheritDoc}
