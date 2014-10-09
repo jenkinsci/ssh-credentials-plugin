@@ -1,7 +1,5 @@
 package com.cloudbees.jenkins.plugins.sshcredentials;
 
-import com.jcraft.jsch.JSchException;
-
 /**
  * @author stephenc
  * @since 25/10/2012 15:20
