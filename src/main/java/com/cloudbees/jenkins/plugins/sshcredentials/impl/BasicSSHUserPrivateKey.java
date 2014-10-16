@@ -25,16 +25,16 @@ package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsSnapshotTaker;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
-import hudson.FilePath;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
-import hudson.remoting.VirtualChannel;
+import hudson.remoting.Channel;
 import hudson.util.Secret;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
@@ -104,6 +104,13 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         super(scope, id, username, description);
         this.privateKeySource = privateKeySource;
         this.passphrase = Secret.fromString(passphrase);
+    }
+
+    private Object writeReplace() {
+        if (/* XStream */Channel.current() == null || /* already safe to serialize */ privateKeySource.isSnapshotSource()) {
+            return this;
+        }
+        return CredentialsProvider.snapshot(this);
     }
 
     /**
@@ -200,8 +207,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
     /**
      * A source of private keys
      */
-    public static abstract class PrivateKeySource extends AbstractDescribableImpl<PrivateKeySource>
-            implements Serializable {
+    public static abstract class PrivateKeySource extends AbstractDescribableImpl<PrivateKeySource> {
         /**
          * Gets the private key from the source
          */
@@ -240,7 +246,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
     /**
      * Let the user enter the key directly via copy & paste
      */
-    public static class DirectEntryPrivateKeySource extends PrivateKeySource {
+    public static class DirectEntryPrivateKeySource extends PrivateKeySource implements Serializable {
         /**
          * Ensure consistent serialization.
          */
@@ -304,10 +310,6 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
      * Let the user reference a file on the disk.
      */
     public static class FileOnMasterPrivateKeySource extends PrivateKeySource {
-        /**
-         * Ensure consistent serialization.
-         */
-        private static final long serialVersionUID = 1L;
 
         /**
          * Our logger
@@ -341,13 +343,15 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         @NonNull
         @Override
         public List<String> getPrivateKeys() {
-            try {
-                return Collections
-                        .singletonList(Hudson.getInstance().getRootPath().act(new ReadFileOnMaster(privateKeyFile)));
-            } catch (IOException e) {
-                LOGGER.log(Level.WARNING, "Could not read private key file " + privateKeyFile, e);
-            } catch (InterruptedException e) {
-                LOGGER.log(Level.WARNING, "Could not read private key file " + privateKeyFile, e);
+            if (privateKeyFile != null) {
+                File key = new File(privateKeyFile);
+                if (key.isFile()) {
+                    try {
+                        return Collections.singletonList(FileUtils.readFileToString(key));
+                    } catch (IOException e) {
+                        LOGGER.log(Level.WARNING, "Could not read private key file " + privateKeyFile, e);
+                    }
+                }
             }
             return Collections.emptyList();
         }
@@ -375,14 +379,12 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         @Override
         public long getPrivateKeysLastModified() {
             if (nextCheckLastModified > System.currentTimeMillis() || lastModified < 0) {
-                try {
-                    lastModified = Hudson.getInstance().getRootPath().act(new LastModifiedOnMaster(privateKeyFile));
-                } catch (NullPointerException e) {
-                    LOGGER.log(Level.WARNING, "Could not stat private key file " + privateKeyFile, e);
-                } catch (IOException e) {
-                    LOGGER.log(Level.WARNING, "Could not stat private key file " + privateKeyFile, e);
-                } catch (InterruptedException e) {
-                    LOGGER.log(Level.WARNING, "Could not stat private key file " + privateKeyFile, e);
+                lastModified = Long.MIN_VALUE;
+                if (privateKeyFile != null) {
+                    File file = new File(privateKeyFile);
+                    if (file.exists()) {
+                        lastModified = file.lastModified();
+                    }
                 }
                 nextCheckLastModified = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(30);
             }
@@ -409,10 +411,6 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
      * Let the user
      */
     public static class UsersPrivateKeySource extends PrivateKeySource {
-        /**
-         * Ensure consistent serialization.
-         */
-        private static final long serialVersionUID = 1L;
 
         /**
          * Our logger
@@ -433,33 +431,41 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         public UsersPrivateKeySource() {
         }
 
+        private List<File> files() {
+            List<File> files = new ArrayList<File>();
+            File sshHome = new File(new File(System.getProperty("user.home")), ".ssh");
+            for (String keyName : Arrays.asList("id_ecdsa", "id_rsa", "id_dsa", "identity")) {
+                File key = new File(sshHome, keyName);
+                if (key.isFile()) {
+                    files.add(key);
+                }
+            }
+            return files;
+        }
+
         /**
          * {@inheritDoc}
          */
         @NonNull
         @Override
         public List<String> getPrivateKeys() {
-            try {
-                return Hudson.getInstance().getRootPath().act(new ReadKeyOnMaster());
-            } catch (IOException e) {
-                LOGGER.log(Level.WARNING, "Could not read private key", e);
-            } catch (InterruptedException e) {
-                LOGGER.log(Level.WARNING, "Could not read private key", e);
+            List<String> keys = new ArrayList<String>();
+            for (File file : files()) {
+                try {
+                    keys.add(FileUtils.readFileToString(file));
+                } catch (IOException e) {
+                    LOGGER.log(Level.WARNING, "Could not read private key", e);
+                }
             }
-            return Collections.emptyList();
+            return keys;
         }
 
         @Override
         public long getPrivateKeysLastModified() {
             if (nextCheckLastModified > System.currentTimeMillis() || lastModified < 0) {
-                try {
-                    lastModified = Hudson.getInstance().getRootPath().act(new KeyLastModifiedOnMaster());
-                } catch (NullPointerException e) {
-                    LOGGER.log(Level.WARNING, "Could not stat private keys", e);
-                } catch (IOException e) {
-                    LOGGER.log(Level.WARNING, "Could not stat private keys", e);
-                } catch (InterruptedException e) {
-                    LOGGER.log(Level.WARNING, "Could not stat private keys", e);
+                lastModified = Long.MIN_VALUE;
+                for (File file : files()) {
+                    lastModified = Math.max(lastModified, file.lastModified());
                 }
                 nextCheckLastModified = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(30);
             }
@@ -479,96 +485,6 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             public String getDisplayName() {
                 return Messages.BasicSSHUserPrivateKey_UsersPrivateKeySourceDisplayName();
             }
-        }
-    }
-
-    public static class ReadFileOnMaster implements FilePath.FileCallable<String> {
-        /**
-         * Ensure consistent serialization.
-         */
-        private static final long serialVersionUID = 1L;
-
-        private final String path;
-
-        public ReadFileOnMaster(String path) {
-            this.path = path;
-        }
-
-        public String invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
-            File key = new File(path);
-            if (key.isFile()) {
-                return FileUtils.readFileToString(key);
-            }
-            return "";
-        }
-    }
-
-    public static class ReadKeyOnMaster implements FilePath.FileCallable<List<String>> {
-
-        /**
-         * Ensure consistent serialization.
-         */
-        private static final long serialVersionUID = 2L;
-
-        public List<String> invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
-            List<String> result = new ArrayList<String>();
-            File sshHome = new File(new File(System.getProperty("user.home")), ".ssh");
-            for (String keyName : Arrays.asList("id_ecdsa", "id_rsa", "id_dsa", "identity")) {
-                File key = new File(sshHome, keyName);
-                if (key.isFile()) {
-                    result.add(FileUtils.readFileToString(key));
-                }
-            }
-            return result;
-        }
-    }
-
-    public static class LastModifiedOnMaster implements FilePath.FileCallable<Long> {
-
-        /**
-         * Ensure consistent serialization.
-         */
-        private static final long serialVersionUID = 2L;
-
-        private final List<String> files;
-
-        public LastModifiedOnMaster(String... files) {
-            this(Arrays.asList(files));
-        }
-
-        public LastModifiedOnMaster(List<String> files) {
-            this.files = new ArrayList<String>(files);
-        }
-
-        public Long invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
-            long lastModified = Long.MIN_VALUE;
-            for (String path : files) {
-                File file = new File(path);
-                if (file.exists()) {
-                    lastModified = Math.max(lastModified, file.lastModified());
-                }
-            }
-            return lastModified;
-        }
-    }
-
-    public static class KeyLastModifiedOnMaster implements FilePath.FileCallable<Long> {
-
-        /**
-         * Ensure consistent serialization.
-         */
-        private static final long serialVersionUID = 2L;
-
-        public Long invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
-            long lastModified = Long.MIN_VALUE;
-            File sshHome = new File(new File(System.getProperty("user.home")), ".ssh");
-            for (String keyName : Arrays.asList("id_ecdsa", "id_rsa", "id_dsa", "identity")) {
-                File file = new File(sshHome, keyName);
-                if (file.exists()) {
-                    lastModified = Math.max(lastModified, file.lastModified());
-                }
-            }
-            return lastModified;
         }
     }
 
