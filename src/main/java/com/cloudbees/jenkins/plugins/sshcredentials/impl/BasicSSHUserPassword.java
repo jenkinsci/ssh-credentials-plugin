@@ -73,22 +73,6 @@ public class BasicSSHUserPassword extends BaseSSHUser implements SSHUserPassword
         return password;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        return super.hashCode();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        return super.equals(o);
-    }
-
     private Object readResolve() {
         return new UsernamePasswordCredentialsImpl(getScope(), getId(), getDescription(), getUsername(), getPassword().getEncryptedValue());
     }
