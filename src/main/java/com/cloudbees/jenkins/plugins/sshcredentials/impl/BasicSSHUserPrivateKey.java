@@ -165,22 +165,6 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
     /**
      * {@inheritDoc}
      */
-    @Override
-    public int hashCode() {
-        return super.hashCode();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(Object o) {
-        return super.equals(o);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Extension
     public static class DescriptorImpl extends CredentialsDescriptor {
 
