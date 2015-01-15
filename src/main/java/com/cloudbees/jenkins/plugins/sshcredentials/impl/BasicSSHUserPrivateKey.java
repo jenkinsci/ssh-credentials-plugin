@@ -24,7 +24,6 @@
 package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
-import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsSnapshotTaker;
@@ -166,7 +165,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
      * {@inheritDoc}
      */
     @Extension
-    public static class DescriptorImpl extends CredentialsDescriptor {
+    public static class DescriptorImpl extends BaseStandardCredentialsDescriptor {
 
         /**
          * {@inheritDoc}
@@ -180,12 +179,6 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             return Hudson.getInstance().getDescriptorList(PrivateKeySource.class);
         }
 
-        public BasicSSHUserPrivateKey fixInstance(BasicSSHUserPrivateKey instance) {
-            return instance == null ? new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, null, "",
-                    new DirectEntryPrivateKeySource(""), "",
-
-                    "") : instance;
-        }
     }
 
     /**
