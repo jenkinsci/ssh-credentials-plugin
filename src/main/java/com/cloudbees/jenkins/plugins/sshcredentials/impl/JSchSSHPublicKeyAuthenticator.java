@@ -24,7 +24,7 @@ public class JSchSSHPublicKeyAuthenticator extends SSHAuthenticator<JSchConnecto
     /**
      * Our logger.
      */
-    private static final Logger LOGGER = Logger.getLogger(TrileadSSHPublicKeyAuthenticator.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(JSchSSHPublicKeyAuthenticator.class.getName());
 
     /**
      * Constructor.
