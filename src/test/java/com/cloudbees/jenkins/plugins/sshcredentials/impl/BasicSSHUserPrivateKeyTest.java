@@ -25,15 +25,26 @@
 package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import java.util.List;
 import hudson.FilePath;
+import hudson.model.Hudson;
 import hudson.remoting.Callable;
+import hudson.security.ACL;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.Rule;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.recipes.LocalData;
+
 
 public class BasicSSHUserPrivateKeyTest {
+
+    final static String TESTKEY_ID = "bc07f814-78bd-4b29-93d4-d25b93285f93";
+    final static String TESTKEY_BEGIN = "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAu1r+HHzmpybc4iwoP5+44FjvcaMkNEWeGQZlmPwLx70XW8+8";
+    final static String TESTKEY_END = "sroT/IHW2jKMD0v8kKLUnKCZYzlw0By7+RvJ8lgzHB0D71f6EC1UWg==\n-----END RSA PRIVATE KEY-----";
 
     @Rule public JenkinsRule r = new JenkinsRule();
 
@@ -53,6 +64,22 @@ public class BasicSSHUserPrivateKeyTest {
         @Override public String call() throws Exception {
             return key.getPrivateKeys().toString();
         }
+    }
+
+    @LocalData
+    @Test
+    public void readOldCredentials() throws Exception {
+        SSHUserPrivateKey supk = CredentialsMatchers.firstOrNull(
+                CredentialsProvider.lookupCredentials(SSHUserPrivateKey.class, Hudson.getInstance(), ACL.SYSTEM, null),
+                CredentialsMatchers.withId(TESTKEY_ID));
+        assertNotNull(supk);
+        List<String> keyList = supk.getPrivateKeys();
+        assertNotNull(keyList);
+        assertEquals(keyList.size(), 1);
+        String privateKey = keyList.get(0);
+        assertNotNull(privateKey);
+        assertTrue(privateKey.startsWith(TESTKEY_BEGIN));
+        assertTrue(privateKey.endsWith(TESTKEY_END));
     }
 
     // TODO demonstrate that all private key sources are round-tripped in XStream
