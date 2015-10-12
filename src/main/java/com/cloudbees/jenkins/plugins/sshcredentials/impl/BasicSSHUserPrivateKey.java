@@ -229,11 +229,11 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          */
         private static final long serialVersionUID = 1L;
 
-        private final String privateKey;
+        private final Secret privateKey;
 
         @DataBoundConstructor
         public DirectEntryPrivateKeySource(String privateKey) {
-            this.privateKey = privateKey;
+            this.privateKey = Secret.fromString(privateKey);
         }
 
         public DirectEntryPrivateKeySource(List<String> privateKeys) {
@@ -246,7 +246,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         @NonNull
         @Override
         public List<String> getPrivateKeys() {
-            return Arrays.asList(StringUtils.split(privateKey, "\f"));
+            return Arrays.asList(StringUtils.split(Secret.toString(privateKey), "\f"));
         }
 
         /**
@@ -256,7 +256,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          */
         @SuppressWarnings("unused") // used by Jelly EL
         public String getPrivateKey() {
-            return privateKey;
+            return Secret.toString(privateKey);
         }
 
         /**
