@@ -33,6 +33,8 @@ import hudson.FilePath;
 import hudson.model.Hudson;
 import hudson.remoting.Callable;
 import hudson.security.ACL;
+import jenkins.security.MasterToSlaveCallable;
+
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.junit.Rule;
@@ -56,7 +58,7 @@ public class BasicSSHUserPrivateKeyTest {
         // TODO would be more interesting to use a Docker fixture to demonstrate that the file load is happening only from the master side
         assertEquals("[stuff]", r.createOnlineSlave().getChannel().call(new LoadPrivateKeys(key)));
     }
-    private static class LoadPrivateKeys implements Callable<String,Exception> {
+    private static class LoadPrivateKeys extends MasterToSlaveCallable<String,Exception> {
         private final SSHUserPrivateKey key;
         LoadPrivateKeys(SSHUserPrivateKey key) {
             this.key = key;

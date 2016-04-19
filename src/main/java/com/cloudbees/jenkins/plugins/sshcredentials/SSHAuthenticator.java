@@ -30,13 +30,14 @@ import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.model.BuildListener;
 import hudson.model.Hudson;
 import hudson.model.TaskListener;
-import hudson.remoting.Callable;
 import hudson.remoting.Channel;
 import hudson.util.StreamTaskListener;
 import jenkins.model.Jenkins;
+import jenkins.security.MasterToSlaveCallable;
 import net.jcip.annotations.GuardedBy;
 
 import java.io.IOException;
@@ -180,6 +181,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      * @return a {@link SSHAuthenticator} that may or may not be able to successfully authenticate.
      * @since 1.4
      */
+    @SuppressFBWarnings(value="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification="https://github.com/jenkinsci/jenkins/pull/2094")
     @NonNull
     public static <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(@NonNull C connection,
                                                                                                 @NonNull U user,
@@ -194,7 +196,8 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
             factories = Jenkins.getInstance().getExtensionList(SSHAuthenticatorFactory.class);
         } else {
             // if running on the slave, bring these factories over here
-            factories = Channel.current().call(new Callable<Collection<SSHAuthenticatorFactory>, IOException>() {
+            factories = Channel.current().call(new MasterToSlaveCallable<Collection<SSHAuthenticatorFactory>, IOException>() {
+                @SuppressFBWarnings(value="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification="https://github.com/jenkinsci/jenkins/pull/2094")
                 public Collection<SSHAuthenticatorFactory> call() throws IOException {
                     return new ArrayList<SSHAuthenticatorFactory>(
                             Jenkins.getInstance().getExtensionList(SSHAuthenticatorFactory.class));

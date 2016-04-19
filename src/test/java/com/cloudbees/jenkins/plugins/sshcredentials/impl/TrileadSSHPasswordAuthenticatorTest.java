@@ -25,16 +25,15 @@ package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticatorFactory;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUser;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPassword;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.ServerHostKeyVerifier;
 import hudson.model.Computer;
 import hudson.model.Items;
-import hudson.remoting.Callable;
 import hudson.slaves.DumbSlave;
+import jenkins.security.MasterToSlaveCallable;
+
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.server.PasswordAuthenticator;
@@ -177,7 +176,7 @@ public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
         }
     }
 
-    private static final class RemoteConnectionTest implements Callable<Void, Exception> {
+    private static final class RemoteConnectionTest extends MasterToSlaveCallable<Void, Exception> {
         private final int port;
         private StandardUsernamePasswordCredentials user;
 
