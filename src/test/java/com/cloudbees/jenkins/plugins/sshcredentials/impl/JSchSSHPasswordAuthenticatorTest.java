@@ -24,9 +24,7 @@
 package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPassword;
 import com.cloudbees.plugins.credentials.CredentialsScope;
-import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.jcraft.jsch.HostKey;
 import com.jcraft.jsch.HostKeyRepository;
@@ -40,10 +38,13 @@ import org.apache.sshd.server.UserAuth;
 import org.apache.sshd.server.auth.UserAuthPassword;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.session.ServerSession;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 
 import java.util.Arrays;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,18 +52,19 @@ import java.util.logging.Logger;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
-public class JSchSSHPasswordAuthenticatorTest extends HudsonTestCase {
+public class JSchSSHPasswordAuthenticatorTest {
 
     private JSchConnector connector;
     private StandardUsernamePasswordCredentials user;
 
-    @Override
-    protected void tearDown() throws Exception {
+    @Rule public JenkinsRule r = new JenkinsRule();
+    
+    @After
+    public void tearDown() throws Exception {
         if (connector != null) {
             connector.close();
             connector = null;
         }
-        super.tearDown();
     }
 
     // disabled as Apache MINA sshd does not provide easy mech for giving a Keyboard Interactive authenticator
@@ -87,11 +89,12 @@ public class JSchSSHPasswordAuthenticatorTest extends HudsonTestCase {
         assertThat(connector.getSession().isConnected(), is(true));
     }
 
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         user =(StandardUsernamePasswordCredentials) Items.XSTREAM.fromXML(Items.XSTREAM.toXML(new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, "foobar", "foomanchu", null)));
     }
 
+    @Test
     public void testPassword() throws Exception {
         SshServer sshd = SshServer.setUpDefaultServer();
         sshd.setPort(0);
@@ -123,6 +126,7 @@ public class JSchSSHPasswordAuthenticatorTest extends HudsonTestCase {
         }
     }
 
+    @Test
     public void testFactory() throws Exception {
         SshServer sshd = SshServer.setUpDefaultServer();
         sshd.setPort(0);
