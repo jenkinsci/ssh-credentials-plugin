@@ -39,7 +39,11 @@ import org.apache.sshd.server.UserAuth;
 import org.apache.sshd.server.auth.UserAuthPublicKey;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.session.ServerSession;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 
 import java.security.PublicKey;
 import java.util.Arrays;
@@ -51,22 +55,23 @@ import java.util.logging.Logger;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-public class TrileadSSHPublicKeyAuthenticatorTest extends HudsonTestCase {
+public class TrileadSSHPublicKeyAuthenticatorTest {
 
     private Connection connection;
     private SSHUserPrivateKey user;
 
-    @Override
-    protected void tearDown() throws Exception {
+    @Rule public JenkinsRule r = new JenkinsRule();
+    
+    @After
+    public void tearDown() throws Exception {
         if (connection != null) {
             connection.close();
             connection = null;
         }
-        super.tearDown();
     }
 
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         user = new SSHUserPrivateKey() {
 
             @NonNull
@@ -130,6 +135,7 @@ public class TrileadSSHPublicKeyAuthenticatorTest extends HudsonTestCase {
         };
     }
 
+    @Test
     public void testAuthenticate() throws Exception {
         SshServer sshd = SshServer.setUpDefaultServer();
         sshd.setPort(0);
@@ -165,6 +171,7 @@ public class TrileadSSHPublicKeyAuthenticatorTest extends HudsonTestCase {
         }
     }
 
+    @Test
     public void testFactory() throws Exception {
         SshServer sshd = SshServer.setUpDefaultServer();
         sshd.setPort(0);
@@ -199,6 +206,7 @@ public class TrileadSSHPublicKeyAuthenticatorTest extends HudsonTestCase {
         }
     }
 
+    @Test
     public void testAltUsername() throws Exception {
         SshServer sshd = SshServer.setUpDefaultServer();
         sshd.setPort(0);

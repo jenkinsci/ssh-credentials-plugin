@@ -25,16 +25,15 @@ package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticatorFactory;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUser;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPassword;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.ServerHostKeyVerifier;
 import hudson.model.Computer;
 import hudson.model.Items;
-import hudson.remoting.Callable;
 import hudson.slaves.DumbSlave;
+import jenkins.security.MasterToSlaveCallable;
+
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.server.PasswordAuthenticator;
@@ -42,7 +41,11 @@ import org.apache.sshd.server.UserAuth;
 import org.apache.sshd.server.auth.UserAuthPassword;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.session.ServerSession;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 
 import java.util.Arrays;
 import java.util.logging.Level;
@@ -51,14 +54,16 @@ import java.util.logging.Logger;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
+public class TrileadSSHPasswordAuthenticatorTest {
 
     private Connection connection;
     private StandardUsernamePasswordCredentials user;
     private SshServer sshd;
 
-    @Override
-    protected void tearDown() throws Exception {
+    @Rule public JenkinsRule r = new JenkinsRule();
+    
+    @After
+    public void tearDown() throws Exception {
         if (connection != null) {
             connection.close();
             connection = null;
@@ -70,7 +75,6 @@ public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
                 Logger.getLogger(getClass().getName()).log(Level.WARNING, "Problems shutting down ssh server", t);
             }
         }
-        super.tearDown();
     }
 
     // disabled as Apache MINA sshd does not provide easy mech for giving a Keyboard Interactive authenticator
@@ -88,11 +92,12 @@ public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
         assertThat(instance.isAuthenticated(), is(true));
     }
 
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         user =(StandardUsernamePasswordCredentials) Items.XSTREAM.fromXML(Items.XSTREAM.toXML(new BasicSSHUserPassword(CredentialsScope.SYSTEM, null, "foobar", "foomanchu", null)));
     }
 
+    @Test
     public void testPassword() throws Exception {
         sshd = createPasswordAuthenticatedSshServer();
         sshd.start();
@@ -123,6 +128,7 @@ public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
         return sshd;
     }
 
+    @Test
     public void testFactory() throws Exception {
         sshd = createPasswordAuthenticatedSshServer();
         sshd.start();
@@ -135,6 +141,7 @@ public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
         assertThat(instance.isAuthenticated(), is(true));
     }
 
+    @Test
     public void testFactoryAltUsername() throws Exception {
         sshd = createPasswordAuthenticatedSshServer("bill");
         sshd.start();
@@ -157,11 +164,12 @@ public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
     /**
      * Brings the {@link SSHAuthenticatorFactory} to a slave.
      */
+    @Test
     public void testSlave() throws Exception {
         SshServer sshd = createPasswordAuthenticatedSshServer();
         sshd.start();
 
-        DumbSlave s = createSlave();
+        DumbSlave s = r.createSlave();
         Computer c = s.toComputer();
         c.connect(false).get();
 
@@ -177,7 +185,7 @@ public class TrileadSSHPasswordAuthenticatorTest extends HudsonTestCase {
         }
     }
 
-    private static final class RemoteConnectionTest implements Callable<Void, Exception> {
+    private static final class RemoteConnectionTest extends MasterToSlaveCallable<Void, Exception> {
         private final int port;
         private StandardUsernamePasswordCredentials user;
 

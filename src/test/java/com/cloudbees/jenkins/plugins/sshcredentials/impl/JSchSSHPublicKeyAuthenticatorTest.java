@@ -27,8 +27,6 @@ import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsDescriptor;
 import com.cloudbees.plugins.credentials.CredentialsScope;
-import com.trilead.ssh2.Connection;
-import com.trilead.ssh2.ServerHostKeyVerifier;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.util.Secret;
@@ -39,7 +37,11 @@ import org.apache.sshd.server.UserAuth;
 import org.apache.sshd.server.auth.UserAuthPublicKey;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.session.ServerSession;
-import org.jvnet.hudson.test.HudsonTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 
 import java.security.PublicKey;
 import java.util.Arrays;
@@ -52,22 +54,23 @@ import java.util.logging.Logger;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
-public class JSchSSHPublicKeyAuthenticatorTest extends HudsonTestCase {
+public class JSchSSHPublicKeyAuthenticatorTest {
 
     private JSchConnector connector;
     private SSHUserPrivateKey user;
 
-    @Override
-    protected void tearDown() throws Exception {
+    @Rule public JenkinsRule r = new JenkinsRule();
+    
+    @After
+    public void tearDown() throws Exception {
         if (connector != null) {
             connector.close();
             connector = null;
         }
-        super.tearDown();
     }
 
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         user = new SSHUserPrivateKey() {
 
             @NonNull
@@ -132,6 +135,7 @@ public class JSchSSHPublicKeyAuthenticatorTest extends HudsonTestCase {
         };
     }
 
+    @Test
     public void testAuthenticate() throws Exception {
         SshServer sshd = SshServer.setUpDefaultServer();
         sshd.setPort(0);
@@ -164,6 +168,7 @@ public class JSchSSHPublicKeyAuthenticatorTest extends HudsonTestCase {
         }
     }
 
+    @Test
     public void testFactory() throws Exception {
         SshServer sshd = SshServer.setUpDefaultServer();
         sshd.setPort(0);
