@@ -106,7 +106,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         this.passphrase = Secret.fromString(passphrase);
     }
 
-    private Object readResolve() throws ObjectStreamException {
+    private synchronized Object readResolve() throws ObjectStreamException {
         if (privateKeySource == null) {
             if (privateKeys != null) {
                 return new BasicSSHUserPrivateKey(getScope(), getId(), getUsername(),
