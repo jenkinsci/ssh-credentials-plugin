@@ -35,6 +35,7 @@ import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.remoting.Channel;
 import hudson.util.Secret;
+import java.io.ObjectStreamException;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -101,12 +102,28 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                                   String passphrase,
                                   String description) {
         super(scope, id, username, description);
-        this.privateKeySource = privateKeySource;
+        this.privateKeySource = privateKeySource == null ? new DirectEntryPrivateKeySource("") : privateKeySource;
         this.passphrase = Secret.fromString(passphrase);
     }
 
+    private Object readResolve() throws ObjectStreamException {
+        if (privateKeySource == null) {
+            if (privateKeys != null) {
+                return new BasicSSHUserPrivateKey(getScope(), getId(), getUsername(),
+                        new DirectEntryPrivateKeySource(privateKeys), getPassphrase().getEncryptedValue(),
+                        getDescription());
+            }
+            return new BasicSSHUserPrivateKey(getScope(), getId(), getUsername(), new DirectEntryPrivateKeySource(""),
+                    getPassphrase().getEncryptedValue(), getDescription());
+        }
+        return this;
+    }
+
     private Object writeReplace() {
-        if (/* XStream */Channel.current() == null || /* already safe to serialize */ privateKeySource.isSnapshotSource()) {
+        if (/* XStream */Channel.current() == null) {
+            return this;
+        }
+        if (privateKeySource == null || privateKeySource.isSnapshotSource()) {
             return this;
         }
         return CredentialsProvider.snapshot(this);
@@ -123,6 +140,9 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
 
     @NonNull
     public synchronized List<String> getPrivateKeys() {
+        if (privateKeySource == null) {
+            return Collections.emptyList();
+        }
         long lastModified = privateKeySource.getPrivateKeysLastModified();
         if (privateKeys == null || privateKeys.isEmpty() || lastModified > privateKeysLastModified) {
             List<String> privateKeys = new ArrayList<String>();
@@ -150,7 +170,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
 
     @NonNull
     public PrivateKeySource getPrivateKeySource() {
-        return privateKeySource;
+        return privateKeySource == null ? new DirectEntryPrivateKeySource("") : privateKeySource;
     }
 
     /**
@@ -246,7 +266,10 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         @NonNull
         @Override
         public List<String> getPrivateKeys() {
-            return Arrays.asList(StringUtils.split(Secret.toString(privateKey), "\f"));
+            String privateKeys = Secret.toString(privateKey);
+            return StringUtils.isBlank(privateKeys)
+                    ? Collections.<String>emptyList()
+                    : Arrays.asList(StringUtils.split(privateKeys, "\f"));
         }
 
         /**
