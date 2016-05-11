@@ -87,9 +87,10 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
 
     /**
      * Subtypes are expected to report authentication failures to this listener.
-     * <p/>
+     * <p>
      * For backward compatibility with clients that do not supply a valid listener, use one that's connected
      * to server's stderr. This way, at least we know the error will be reported somewhere.
+     * </p>
      */
     @NonNull
     private volatile TaskListener listener = StreamTaskListener.fromStderr();
@@ -139,13 +140,14 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
 
     /**
      * Sets the {@link TaskListener} that receives errors that happen during the authentication.
-     * <p/>
+     * <p>
      * If you are doing this as a part of a build, pass in your {@link BuildListener}.
      * Pass in null to suppress the error reporting. Doing so is useful if the caller intends
      * to try another {@link SSHAuthenticator} when this one fails.
-     * <p/>
+     * </p><p>
      * For assisting troubleshooting with callers that do not provide a valid listener,
      * by default the errors will be sent to stderr of the server.
+     * </p>
      */
     public void setListener(TaskListener listener) {
         if (listener == null) {
@@ -333,9 +335,10 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
     /**
      * Returns {@code true} if the bound connection is in a state where authentication can be tried using the
      * supplied credentials.
-     * <p/>
+     * <p>
      * Subclasses can override this if they can tell whether it is possible to make an authentication attempt, default
      * implementation is one-shot always.
+     * </p>
      *
      * @return {@code true} if the bound connection is in a state where authentication can be tried using the
      *         supplied credentials.
@@ -379,11 +382,12 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
 
     /**
      * SPI for authenticating the bound connection using the supplied credentials.
-     * <p/>
+     * <p>
      * As a guideline, authentication errors should be reported to {@link #getListener()}
      * before this method returns with {@code false}. This helps an user better understand
      * what is tried and failing. Logging can be used in addition to this to capture further details.
      * (in contrast, please avoid reporting a success to the listener to improve S/N ratio)
+     * </p>
      *
      * @return {@code true} if and only if authentication was successful.
      */

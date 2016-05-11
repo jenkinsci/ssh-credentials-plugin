@@ -34,9 +34,9 @@ import java.io.Serializable;
 /**
  * Extension point to allow plugging in {@link SSHAuthenticator} implementations for the many SSH client libraries
  * available.
- * <p/>
- * <p/>
+ * <p>
  * This object can be shipped to remote to create an {@link SSHAuthenticator} on a remote node.
+ * </p>
  *
  * @see SSHAuthenticator#newInstance(Object, SSHUser)
  */

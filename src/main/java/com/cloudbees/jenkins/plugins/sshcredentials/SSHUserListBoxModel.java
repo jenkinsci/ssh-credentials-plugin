@@ -52,10 +52,11 @@ public class SSHUserListBoxModel extends AbstractIdCredentialsListBoxModel<SSHUs
     /**
      * Adds all the system-scoped credentials (they will be filtered with {@link SSHAuthenticator#matcher()}
      * implicitly).
-     * <p/>
+     * <p>
      * These credentials are meant to be used for system configuration and other things scoped to the {@link Jenkins}
      * object,
      * such as slaves.
+     * </p>
      *
      * @return {@code this} for method chaining.
      * @deprecated use {@link #withSystemScopeCredentials()}
@@ -68,10 +69,11 @@ public class SSHUserListBoxModel extends AbstractIdCredentialsListBoxModel<SSHUs
     /**
      * Adds all the system-scoped credentials (they will be filtered with {@link SSHAuthenticator#matcher()}
      * implicitly).
-     * <p/>
+     * <p>
      * These credentials are meant to be used for system configuration and other things scoped to the {@link Jenkins}
      * object,
      * such as slaves.
+     * </p>
      *
      * @return {@code this} for method chaining.
      */
@@ -82,10 +84,11 @@ public class SSHUserListBoxModel extends AbstractIdCredentialsListBoxModel<SSHUs
     /**
      * Adds all the system-scoped credentials (they will be filtered with {@link SSHAuthenticator#matcher()}
      * implicitly).
-     * <p/>
+     * <p>
      * These credentials are meant to be used for system configuration and other things scoped to the {@link Jenkins}
      * object,
      * such as slaves.
+     * </p>
      *
      * @param domainRequirements the domain requirements
      * @return {@code this} for method chaining.
@@ -96,10 +99,11 @@ public class SSHUserListBoxModel extends AbstractIdCredentialsListBoxModel<SSHUs
 
     /**
      * Adds all the system-scoped credentials.
-     * <p/>
+     * <p>
      * These credentials are meant to be used for system configuration and other things scoped to the {@link Jenkins}
      * object,
      * such as slaves.
+     * </p>
      *
      * @param matcher            a matcher to filter the credentials
      * @param domainRequirements the domain requirements
@@ -113,10 +117,11 @@ public class SSHUserListBoxModel extends AbstractIdCredentialsListBoxModel<SSHUs
     /**
      * Adds all the system-scoped credentials (they will be filtered with {@link SSHAuthenticator#matcher()}
      * implicitly).
-     * <p/>
+     * <p>
      * These credentials are meant to be used for system configuration and other things scoped to the {@link Jenkins}
      * object,
      * such as slaves.
+     * </p>
      *
      * @param domainRequirements the domain requirements
      * @return {@code this} for method chaining.
@@ -127,10 +132,11 @@ public class SSHUserListBoxModel extends AbstractIdCredentialsListBoxModel<SSHUs
 
     /**
      * Adds all the system-scoped credentials.
-     * <p/>
+     * <p>
      * These credentials are meant to be used for system configuration and other things scoped to the {@link Jenkins}
      * object,
      * such as slaves.
+     * </p>
      *
      * @param matcher            a matcher to filter the credentials
      * @param domainRequirements the domain requirements

@@ -28,6 +28,7 @@ import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import java.util.List;
 import hudson.FilePath;
 import hudson.model.Hudson;
@@ -72,7 +73,8 @@ public class BasicSSHUserPrivateKeyTest {
     @Test
     public void readOldCredentials() throws Exception {
         SSHUserPrivateKey supk = CredentialsMatchers.firstOrNull(
-                CredentialsProvider.lookupCredentials(SSHUserPrivateKey.class, Hudson.getInstance(), ACL.SYSTEM, null),
+                CredentialsProvider.lookupCredentials(SSHUserPrivateKey.class, Hudson.getInstance(), ACL.SYSTEM,
+                        (List<DomainRequirement>)null),
                 CredentialsMatchers.withId(TESTKEY_ID));
         assertNotNull(supk);
         List<String> keyList = supk.getPrivateKeys();

@@ -241,7 +241,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
     }
 
     /**
-     * Let the user enter the key directly via copy & paste
+     * Let the user enter the key directly via copy &amp; paste
      */
     public static class DirectEntryPrivateKeySource extends PrivateKeySource implements Serializable {
         /**
