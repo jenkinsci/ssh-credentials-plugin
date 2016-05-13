@@ -39,6 +39,9 @@ import java.io.ObjectStreamException;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jenkins.ui.icon.Icon;
+import org.jenkins.ui.icon.IconSet;
+import org.jenkins.ui.icon.IconType;
 import org.kohsuke.putty.PuTTYKey;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -199,6 +202,40 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             return Hudson.getInstance().getDescriptorList(PrivateKeySource.class);
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        public String getIconClassName() {
+            return "icon-ssh-credentials-ssh-key";
+        }
+
+        static {
+            for (String name : new String[]{
+                    "ssh-key"
+            }) {
+                IconSet.icons.addIcon(new Icon(
+                        String.format("icon-ssh-credentials-%s icon-sm", name),
+                        String.format("ssh-credentials/images/16x16/%s.png", name),
+                        Icon.ICON_SMALL_STYLE, IconType.PLUGIN)
+                );
+                IconSet.icons.addIcon(new Icon(
+                        String.format("icon-ssh-credentials-%s icon-md", name),
+                        String.format("ssh-credentials/images/24x24/%s.png", name),
+                        Icon.ICON_MEDIUM_STYLE, IconType.PLUGIN)
+                );
+                IconSet.icons.addIcon(new Icon(
+                        String.format("icon-ssh-credentials-%s icon-lg", name),
+                        String.format("ssh-credentials/images/32x32/%s.png", name),
+                        Icon.ICON_LARGE_STYLE, IconType.PLUGIN)
+                );
+                IconSet.icons.addIcon(new Icon(
+                        String.format("icon-ssh-credentials-%s icon-xlg", name),
+                        String.format("ssh-credentials/images/48x48/%s.png", name),
+                        Icon.ICON_XLARGE_STYLE, IconType.PLUGIN)
+                );
+            }
+
+        }
     }
 
     /**
