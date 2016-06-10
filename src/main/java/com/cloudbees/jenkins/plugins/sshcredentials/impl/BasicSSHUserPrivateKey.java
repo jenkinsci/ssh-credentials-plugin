@@ -36,6 +36,7 @@ import hudson.model.Hudson;
 import hudson.remoting.Channel;
 import hudson.util.Secret;
 import java.io.ObjectStreamException;
+import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -199,7 +200,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         }
 
         public DescriptorExtensionList<PrivateKeySource, Descriptor<PrivateKeySource>> getPrivateKeySources() {
-            return Hudson.getInstance().getDescriptorList(PrivateKeySource.class);
+            return Jenkins.getActiveInstance().getDescriptorList(PrivateKeySource.class);
         }
 
         /**
