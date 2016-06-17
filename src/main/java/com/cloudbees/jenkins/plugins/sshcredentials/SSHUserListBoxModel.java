@@ -144,9 +144,8 @@ public class SSHUserListBoxModel extends AbstractIdCredentialsListBoxModel<SSHUs
      */
     public SSHUserListBoxModel withSystemScopeCredentials(CredentialsMatcher matcher,
                                                           List<DomainRequirement> domainRequirements) {
-        withMatching(matcher,
-                CredentialsProvider.lookupCredentials(StandardUsernameCredentials.class, Jenkins.getInstance(),
-                        ACL.SYSTEM, domainRequirements));
+        includeMatchingAs(ACL.SYSTEM, Jenkins.getActiveInstance(), StandardUsernameCredentials.class,
+                domainRequirements, matcher);
         return this;
     }
 

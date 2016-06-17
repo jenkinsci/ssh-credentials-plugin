@@ -261,7 +261,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
                                                                                  @NonNull Class<U> userClass) {
         connectionClass.getClass(); // throw NPE if null
         userClass.getClass(); // throw NPE if null
-        for (SSHAuthenticatorFactory factory : Hudson.getInstance().getExtensionList(SSHAuthenticatorFactory.class)) {
+        for (SSHAuthenticatorFactory factory : ExtensionList.lookup(SSHAuthenticatorFactory.class)) {
             if (factory.supports(connectionClass, userClass)) {
                 return true;
             }
