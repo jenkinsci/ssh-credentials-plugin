@@ -27,27 +27,17 @@ import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsSnapshotTaker;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
-import hudson.model.Hudson;
 import hudson.remoting.Channel;
 import hudson.util.Secret;
-import java.io.ObjectStreamException;
-import jenkins.model.Jenkins;
-import net.jcip.annotations.GuardedBy;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.jenkins.ui.icon.Icon;
-import org.jenkins.ui.icon.IconSet;
-import org.jenkins.ui.icon.IconType;
-import org.kohsuke.putty.PuTTYKey;
-import org.kohsuke.stapler.DataBoundConstructor;
-
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -57,6 +47,15 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jenkins.model.Jenkins;
+import net.jcip.annotations.GuardedBy;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.jenkins.ui.icon.Icon;
+import org.jenkins.ui.icon.IconSet;
+import org.jenkins.ui.icon.IconType;
+import org.kohsuke.putty.PuTTYKey;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * A simple username / password for use with SSH connections.
@@ -107,18 +106,44 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                                   String description) {
         super(scope, id, username, description);
         this.privateKeySource = privateKeySource == null ? new DirectEntryPrivateKeySource("") : privateKeySource;
-        this.passphrase = Secret.fromString(passphrase);
+        this.passphrase = fixEmpty(passphrase == null ? null : Secret.fromString(passphrase));
+    }
+
+    private static Secret fixEmpty(Secret secret) {
+        return secret == null ? null : secret.getPlainText().isEmpty() ? null : secret;
     }
 
     private synchronized Object readResolve() throws ObjectStreamException {
         if (privateKeySource == null) {
+            Secret passphrase = getPassphrase();
             if (privateKeys != null) {
-                return new BasicSSHUserPrivateKey(getScope(), getId(), getUsername(),
-                        new DirectEntryPrivateKeySource(privateKeys), getPassphrase().getEncryptedValue(),
-                        getDescription());
+                return new BasicSSHUserPrivateKey(
+                        getScope(),
+                        getId(),
+                        getUsername(),
+                        new DirectEntryPrivateKeySource(privateKeys),
+                        passphrase == null ? null : passphrase.getEncryptedValue(),
+                        getDescription()
+                );
             }
-            return new BasicSSHUserPrivateKey(getScope(), getId(), getUsername(), new DirectEntryPrivateKeySource(""),
-                    getPassphrase().getEncryptedValue(), getDescription());
+            return new BasicSSHUserPrivateKey(
+                    getScope(),
+                    getId(),
+                    getUsername(),
+                    new DirectEntryPrivateKeySource(""),
+                    passphrase == null ? null : passphrase.getEncryptedValue(),
+                    getDescription()
+            );
+        }
+        if (passphrase != null && fixEmpty(passphrase) == null) {
+            return new BasicSSHUserPrivateKey(
+                    getScope(),
+                    getId(),
+                    getUsername(),
+                    privateKeySource,
+                    null,
+                    getDescription()
+            );
         }
         return this;
     }
@@ -180,7 +205,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
     /**
      * {@inheritDoc}
      */
-    @NonNull
+    @CheckForNull
     public Secret getPassphrase() {
         return passphrase;
     }
