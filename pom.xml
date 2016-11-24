@@ -37,7 +37,7 @@
   <packaging>hpi</packaging>
 
   <name>SSH Credentials Plugin</name>
-  <description>Allows to store SSH credentials in Jenkins.</description>
+  <description>Allows to store SSH credentials in Jenkins</description>
   <url>http://wiki.jenkins-ci.org/display/JENKINS/SSH+Credentials+Plugin</url>
   <licenses>
     <license>
