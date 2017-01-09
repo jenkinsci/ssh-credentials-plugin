@@ -324,6 +324,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      * @since 0.5
      */
     private static class Matcher implements CredentialsMatcher {
+	private static final Long serialVersionUID = 1L;
 
         /**
          * The connection class.
