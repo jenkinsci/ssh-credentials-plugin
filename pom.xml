@@ -37,7 +37,8 @@
   <packaging>hpi</packaging>
 
   <name>SSH Credentials Plugin</name>
-  <url>http://wiki.jenkins-ci.org/display/JENKINS/SSH+Credentials+Plugin</url>
+  <description>Allows storage of SSH credentials in Jenkins</description>
+  <url>https://wiki.jenkins-ci.org/display/JENKINS/SSH+Credentials+Plugin</url>
   <licenses>
     <license>
       <name>The MIT license</name>
