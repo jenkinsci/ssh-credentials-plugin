@@ -33,7 +33,7 @@
   </parent>
 
   <artifactId>ssh-credentials</artifactId>
-  <version>1.13</version>
+  <version>1.14-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>SSH Credentials Plugin</name>
@@ -62,7 +62,7 @@
     <connection>scm:git:git://github.com/jenkinsci/ssh-credentials-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/ssh-credentials-plugin.git</developerConnection>
     <url>http://github.com/jenkinsci/ssh-credentials-plugin</url>
-    <tag>ssh-credentials-1.13</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <properties>
