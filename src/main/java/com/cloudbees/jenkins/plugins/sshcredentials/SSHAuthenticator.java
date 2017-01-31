@@ -326,10 +326,10 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
     private static class Matcher implements CredentialsMatcher {
         /**
          * Standardize serialization across different JVMs.
-	 *
-	 * @since 1.13
+         *
+         * @since 1.13
          */
-	// historical value generated from 1.12 code with Java 8
+        // historical value generated from 1.12 code with Java 8
 	private static final Long serialVersionUID = -5078593817273453864L; 
 
         /**
