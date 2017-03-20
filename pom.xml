@@ -84,18 +84,17 @@
   </pluginRepositories>
 
   <dependencies>
-    <!-- regular dependencies -->
-    <dependency>
-      <groupId>com.jcraft</groupId>
-      <artifactId>jsch</artifactId>
-      <version>0.1.42</version>
-      <optional>true</optional>
-    </dependency>
     <!-- plugin dependencies -->
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>credentials</artifactId>
       <version>2.1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>jsch</artifactId>
+      <version>0.1.42</version>
+      <optional>true</optional>
     </dependency>
     <!-- jenkins dependencies -->
     <!-- test dependencies -->
