@@ -30,11 +30,11 @@ import com.cloudbees.plugins.credentials.CredentialsScope;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.util.Secret;
-import org.apache.sshd.SshServer;
 import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.server.PublickeyAuthenticator;
-import org.apache.sshd.server.UserAuth;
-import org.apache.sshd.server.auth.UserAuthPublicKey;
+import org.apache.sshd.server.SshServer;
+import org.apache.sshd.server.auth.UserAuth;
+import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
+import org.apache.sshd.server.auth.pubkey.UserAuthPublicKeyFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.session.ServerSession;
 import org.junit.After;
@@ -145,7 +145,7 @@ public class JSchSSHPublicKeyAuthenticatorTest {
                 return username.equals("foobar");
             }
         });
-        sshd.setUserAuthFactories(Arrays.<NamedFactory<UserAuth>>asList(new UserAuthPublicKey.Factory()));
+        sshd.setUserAuthFactories(Arrays.<NamedFactory<UserAuth>>asList(new UserAuthPublicKeyFactory()));
         try {
             sshd.start();
             connector = new JSchConnector(user.getUsername(), "localhost", sshd.getPort());
@@ -178,7 +178,7 @@ public class JSchSSHPublicKeyAuthenticatorTest {
                 return username.equals("foobar");
             }
         });
-        sshd.setUserAuthFactories(Arrays.<NamedFactory<UserAuth>>asList(new UserAuthPublicKey.Factory()));
+        sshd.setUserAuthFactories(Arrays.<NamedFactory<UserAuth>>asList(new UserAuthPublicKeyFactory()));
         try {
             sshd.start();
             connector = new JSchConnector(user.getUsername(), "localhost", sshd.getPort());

@@ -32,7 +32,6 @@ import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import java.util.List;
 import hudson.FilePath;
 import hudson.model.Hudson;
-import hudson.remoting.Callable;
 import hudson.security.ACL;
 import jenkins.security.MasterToSlaveCallable;
 
