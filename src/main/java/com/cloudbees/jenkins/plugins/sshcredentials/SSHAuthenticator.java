@@ -31,8 +31,8 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.ExtensionList;
+import hudson.Functions;
 import hudson.model.BuildListener;
-import hudson.model.Hudson;
 import hudson.model.TaskListener;
 import hudson.remoting.Channel;
 import hudson.util.StreamTaskListener;
@@ -41,8 +41,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jenkins.model.Jenkins;
 import jenkins.security.SlaveToMasterCallable;
 import net.jcip.annotations.GuardedBy;
@@ -437,8 +435,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
                 try {
                     authenticated = doAuthenticate();
                 } catch (Throwable t) {
-                    Logger.getLogger(getClass().getName())
-                            .log(Level.WARNING, "Uncaught exception escaped doAuthenticate method", t);
+                    listener.error("SSH authentication failed").println(Functions.printThrowable(t).trim()); // TODO 2.43+ use Functions.printStackTrace
                     authenticated = false;
                 }
             }
