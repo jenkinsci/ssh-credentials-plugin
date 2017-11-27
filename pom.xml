@@ -66,8 +66,8 @@
   </scm>
 
   <properties>
-    <jenkins.version>1.609</jenkins.version>
-    <java.level>6</java.level>
+    <jenkins.version>2.7.1</jenkins.version>
+    <java.level>7</java.level>
   </properties>
 
   <repositories>
@@ -102,7 +102,7 @@
     <dependency>
       <groupId>org.apache.sshd</groupId>
       <artifactId>sshd-core</artifactId>
-      <version>0.12.0</version>
+      <version>1.6.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
