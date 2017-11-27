@@ -232,7 +232,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      */
     private static List<SSHAuthenticatorFactory> lookupFactories() {
         // TODO once Jenkins core has a class that can be used to detect running on build agent use that to gate instead
-        return Jenkins.getInstance() == null ? null : ExtensionList.lookup(SSHAuthenticatorFactory.class);
+        return Jenkins.getInstanceOrNull() == null ? null : ExtensionList.lookup(SSHAuthenticatorFactory.class);
     }
 
     /**
