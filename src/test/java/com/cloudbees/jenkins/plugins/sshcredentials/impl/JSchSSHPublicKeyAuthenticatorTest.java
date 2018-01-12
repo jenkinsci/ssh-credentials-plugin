@@ -30,20 +30,13 @@ import com.cloudbees.plugins.credentials.CredentialsScope;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.util.Secret;
-import org.apache.sshd.server.SshServer;
-import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
-import org.apache.sshd.server.auth.UserAuth;
-import org.apache.sshd.server.auth.pubkey.UserAuthPublicKeyFactory;
-import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
-import org.apache.sshd.server.session.ServerSession;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
-import java.security.PublicKey;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -137,18 +130,21 @@ public class JSchSSHPublicKeyAuthenticatorTest {
 
     @Test
     public void testAuthenticate() throws Exception {
-        SshServer sshd = SshServer.setUpDefaultServer();
-        sshd.setPort(0);
-        sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
-        sshd.setPublickeyAuthenticator(new PublickeyAuthenticator() {
-            public boolean authenticate(String username, PublicKey key, ServerSession session) {
-                return username.equals("foobar");
-            }
-        });
-        sshd.setUserAuthFactories(Arrays.<NamedFactory<UserAuth>>asList(new UserAuthPublicKeyFactory()));
+        Object sshd = newDefaultSshServer();
+        Class keyPairProviderClass = newKeyPairProviderClass();
+        Object provider = newProvider();
+        Class authenticatorClass = newAuthenticatorClass();
+        Object authenticator = newAuthenticator(authenticatorClass, "foobar");
+        Object factory = newFactory();
+
+        invoke(sshd, "setPort", new Class[] {Integer.TYPE}, new Object[] {0});
+        invoke(sshd, "setKeyPairProvider", new Class[] {keyPairProviderClass}, new Object[] {provider});
+        invoke(sshd, "setPublickeyAuthenticator", new Class[] {authenticatorClass}, new Object[] {authenticator});
+        invoke(sshd, "setUserAuthFactories", new Class[] {List.class}, new Object[] {Arrays.asList(factory)});
         try {
-            sshd.start();
-            connector = new JSchConnector(user.getUsername(), "localhost", sshd.getPort());
+            invoke(sshd, "start", null, null);
+            int port = (Integer)invoke(sshd, "getPort", null, null);
+            connector = new JSchConnector(user.getUsername(), "localhost", port);
             JSchSSHPublicKeyAuthenticator instance =
                     new JSchSSHPublicKeyAuthenticator(connector, user);
             assertThat(instance.getAuthenticationMode(), is(SSHAuthenticator.Mode.BEFORE_CONNECT));
@@ -161,7 +157,7 @@ public class JSchSSHPublicKeyAuthenticatorTest {
             assertThat(connector.getSession().isConnected(), is(true));
         } finally {
             try {
-                sshd.stop(true);
+                invoke(sshd, "stop", new Class[] {Boolean.TYPE}, new Object[] {true});
             } catch (Throwable t) {
                 Logger.getLogger(getClass().getName()).log(Level.WARNING, "Problems shutting down ssh server", t);
             }
@@ -170,18 +166,21 @@ public class JSchSSHPublicKeyAuthenticatorTest {
 
     @Test
     public void testFactory() throws Exception {
-        SshServer sshd = SshServer.setUpDefaultServer();
-        sshd.setPort(0);
-        sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
-        sshd.setPublickeyAuthenticator(new PublickeyAuthenticator() {
-            public boolean authenticate(String username, PublicKey key, ServerSession session) {
-                return username.equals("foobar");
-            }
-        });
-        sshd.setUserAuthFactories(Arrays.<NamedFactory<UserAuth>>asList(new UserAuthPublicKeyFactory()));
+        Object sshd = newDefaultSshServer();
+        Class keyPairProviderClass = newKeyPairProviderClass();
+        Object provider = newProvider();
+        Class authenticatorClass = newAuthenticatorClass();
+        Object authenticator = newAuthenticator(authenticatorClass, "foobar");
+        Object factory = newFactory();
+
+        invoke(sshd, "setPort", new Class[] {Integer.TYPE}, new Object[] {0});
+        invoke(sshd, "setKeyPairProvider", new Class[] {keyPairProviderClass}, new Object[] {provider});
+        invoke(sshd, "setPublickeyAuthenticator", new Class[] {authenticatorClass}, new Object[] {authenticator});
+        invoke(sshd, "setUserAuthFactories", new Class[] {List.class}, new Object[] {Arrays.asList(factory)});
         try {
-            sshd.start();
-            connector = new JSchConnector(user.getUsername(), "localhost", sshd.getPort());
+            invoke(sshd, "start", null, null);
+            int port = (Integer)invoke(sshd, "getPort", null, null);
+            connector = new JSchConnector(user.getUsername(), "localhost", port);
             SSHAuthenticator instance = SSHAuthenticator.newInstance(connector, user);
             assertThat(instance.getAuthenticationMode(), is(SSHAuthenticator.Mode.BEFORE_CONNECT));
             assertThat(instance.canAuthenticate(), is(true));
@@ -193,10 +192,92 @@ public class JSchSSHPublicKeyAuthenticatorTest {
             assertThat(connector.getSession().isConnected(), is(true));
         } finally {
             try {
-                sshd.stop(true);
+                invoke(sshd, "stop", new Class[] {Boolean.TYPE}, new Object[] {true});
             } catch (Throwable t) {
                 Logger.getLogger(getClass().getName()).log(Level.WARNING, "Problems shutting down ssh server", t);
             }
         }
     }
-}
+
+    private Object invoke(Object target, String methodName, Class[] parameterTypes, Object[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        return target.getClass().getMethod(methodName, parameterTypes).invoke(target, args);
+    }
+
+    private Object newDefaultSshServer() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Object sshd = null;
+        Class sshdClass;
+        try {
+            sshdClass = Class.forName("org.apache.sshd.SshServer");
+        } catch (ClassNotFoundException e) {
+            sshdClass = Class.forName("org.apache.sshd.server.SshServer");
+        }
+
+        sshd = sshdClass.getDeclaredMethod("setUpDefaultServer", null).invoke(null);
+        assertNotNull(sshd);
+
+        return sshd;
+    }
+
+    private Class newKeyPairProviderClass() throws ClassNotFoundException {
+        Class keyPairProviderClass;
+        try {
+            keyPairProviderClass = Class.forName("org.apache.sshd.common.KeyPairProvider");
+        } catch (ClassNotFoundException e) {
+            keyPairProviderClass = Class.forName("org.apache.sshd.common.keyprovider.KeyPairProvider");
+        }
+
+        return keyPairProviderClass;
+    }
+
+    private Object newProvider() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+        Class providerClass = Class.forName("org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider");
+        Object provider = providerClass.getConstructor().newInstance();
+        assertNotNull(provider);
+
+        return provider;
+    }
+
+    private Class newAuthenticatorClass() throws ClassNotFoundException {
+        Class authenticatorClass;
+        try {
+            authenticatorClass = Class.forName("org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator");
+        } catch(ClassNotFoundException e) {
+            authenticatorClass = Class.forName("org.apache.sshd.server.PublickeyAuthenticator");
+        }
+
+        return authenticatorClass;
+    }
+
+    private Object newAuthenticator(Class authenticatorClass, final String userName) throws ClassNotFoundException, IllegalArgumentException {
+        Object authenticator = java.lang.reflect.Proxy.newProxyInstance(
+                authenticatorClass.getClassLoader(),
+                new java.lang.Class[]{authenticatorClass},
+                new java.lang.reflect.InvocationHandler() {
+
+                    @Override
+                    public Object invoke(Object proxy, java.lang.reflect.Method method, Object[] args) throws java.lang.Throwable {
+                        if (method.getName().equals("authenticate")) {
+                            return userName.equals(args[0]);
+                        }
+
+                        return null;
+                    }
+                });
+        assertNotNull(authenticator);
+        return authenticator;
+    }
+
+    private Object newFactory() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+        Object factory = null;
+        Class factoryClass;
+        try {
+            factoryClass = Class.forName("org.apache.sshd.server.auth.UserAuthPublicKey$Factory");
+        } catch (ClassNotFoundException e) {
+            factoryClass = Class.forName("org.apache.sshd.server.auth.pubkey.UserAuthPublicKeyFactory");
+        }
+
+        factory = factoryClass.getConstructor().newInstance();
+
+        assertNotNull(factory);
+        return factory;
+    }}
