@@ -497,7 +497,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         private List<File> files() {
             List<File> files = new ArrayList<File>();
             File sshHome = new File(new File(System.getProperty("user.home")), ".ssh");
-            for (String keyName : Arrays.asList("id_ecdsa", "id_rsa", "id_dsa", "identity")) {
+            for (String keyName : Arrays.asList("id_ecdsa", "id_ed25519", "id_rsa", "id_dsa", "identity")) {
                 File key = new File(sshHome, keyName);
                 if (key.isFile()) {
                     files.add(key);
