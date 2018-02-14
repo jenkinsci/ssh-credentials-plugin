@@ -31,20 +31,15 @@ import com.jcraft.jsch.HostKeyRepository;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.UserInfo;
 import hudson.model.Items;
-import org.apache.sshd.SshServer;
-import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.server.PasswordAuthenticator;
-import org.apache.sshd.server.UserAuth;
-import org.apache.sshd.server.auth.UserAuthPassword;
-import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
-import org.apache.sshd.server.session.ServerSession;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -96,18 +91,21 @@ public class JSchSSHPasswordAuthenticatorTest {
 
     @Test
     public void testPassword() throws Exception {
-        SshServer sshd = SshServer.setUpDefaultServer();
-        sshd.setPort(0);
-        sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
-        sshd.setPasswordAuthenticator(new PasswordAuthenticator() {
-            public boolean authenticate(String username, String password, ServerSession session) {
-                return "foomanchu".equals(password);
-            }
-        });
-        sshd.setUserAuthFactories(Arrays.<NamedFactory<UserAuth>>asList(new UserAuthPassword.Factory()));
+        Object sshd = newDefaultSshServer();
+        Class keyPairProviderClass = newKeyPairProviderClass();
+        Object provider = newProvider();
+        Class authenticatorClass = newAuthenticatorClass();
+        Object authenticator = newAuthenticator(authenticatorClass);
+        Object factory = newFactory();
+
+        invoke(sshd, "setPort", new Class[] {Integer.TYPE}, new Object[] {0});
+        invoke(sshd, "setKeyPairProvider", new Class[] {keyPairProviderClass}, new Object[] {provider});
+        invoke(sshd, "setPasswordAuthenticator", new Class[] {authenticatorClass}, new Object[] {authenticator});
+        invoke(sshd, "setUserAuthFactories", new Class[] {List.class}, new Object[] {Arrays.asList(factory)});
         try {
-            sshd.start();
-            connector = new JSchConnector(user.getUsername(),"localhost", sshd.getPort());
+            invoke(sshd, "start", null, null);
+            int port = (Integer)invoke(sshd, "getPort", null, null);
+            connector = new JSchConnector(user.getUsername(),"localhost", port);
             JSchSSHPasswordAuthenticator instance = new JSchSSHPasswordAuthenticator(connector, user);
             assertThat(instance.getAuthenticationMode(), is(SSHAuthenticator.Mode.BEFORE_CONNECT));
             assertThat(instance.canAuthenticate(), is(true));
@@ -119,7 +117,7 @@ public class JSchSSHPasswordAuthenticatorTest {
             assertThat(connector.getSession().isConnected(), is(true));
         } finally {
             try {
-                sshd.stop(true);
+                invoke(sshd, "stop", new Class[] {Boolean.TYPE}, new Object[] {true});
             } catch (Throwable t) {
                 Logger.getLogger(getClass().getName()).log(Level.WARNING, "Problems shutting down ssh server", t);
             }
@@ -128,18 +126,21 @@ public class JSchSSHPasswordAuthenticatorTest {
 
     @Test
     public void testFactory() throws Exception {
-        SshServer sshd = SshServer.setUpDefaultServer();
-        sshd.setPort(0);
-        sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
-        sshd.setPasswordAuthenticator(new PasswordAuthenticator() {
-            public boolean authenticate(String username, String password, ServerSession session) {
-                return "foomanchu".equals(password);
-            }
-        });
-        sshd.setUserAuthFactories(Arrays.<NamedFactory<UserAuth>>asList(new UserAuthPassword.Factory()));
+        Object sshd = newDefaultSshServer();
+        Class keyPairProviderClass = newKeyPairProviderClass();
+        Object provider = newProvider();
+        Class authenticatorClass = newAuthenticatorClass();
+        Object authenticator = newAuthenticator(authenticatorClass);
+        Object factory = newFactory();
+
+        invoke(sshd, "setPort", new Class[] {Integer.TYPE}, new Object[] {0});
+        invoke(sshd, "setKeyPairProvider", new Class[] {keyPairProviderClass}, new Object[] {provider});
+        invoke(sshd, "setPasswordAuthenticator", new Class[] {authenticatorClass}, new Object[] {authenticator});
+        invoke(sshd, "setUserAuthFactories", new Class[] {List.class}, new Object[] {Arrays.asList(factory)});
         try {
-            sshd.start();
-            connector = new JSchConnector(user.getUsername(),"localhost", sshd.getPort());
+            invoke(sshd, "start", null, null);
+            int port = (Integer)invoke(sshd, "getPort", null, null);
+            connector = new JSchConnector(user.getUsername(),"localhost", port);
             SSHAuthenticator instance = SSHAuthenticator.newInstance(connector, user);
             assertThat(instance.getAuthenticationMode(), is(SSHAuthenticator.Mode.BEFORE_CONNECT));
             assertThat(instance.canAuthenticate(), is(true));
@@ -151,7 +152,7 @@ public class JSchSSHPasswordAuthenticatorTest {
             assertThat(connector.getSession().isConnected(), is(true));
         } finally {
             try {
-                sshd.stop(true);
+                invoke(sshd, "stop", new Class[] {Boolean.TYPE}, new Object[] {true});
             } catch (Throwable t) {
                 Logger.getLogger(getClass().getName()).log(Level.WARNING, "Problems shutting down ssh server", t);
             }
@@ -184,5 +185,89 @@ public class JSchSSHPasswordAuthenticatorTest {
         public HostKey[] getHostKey(String host, String type) {
             return new HostKey[0];
         }
+    }
+
+
+
+    private Object invoke(Object target, String methodName, Class[] parameterTypes, Object[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        return target.getClass().getMethod(methodName, parameterTypes).invoke(target, args);
+    }
+
+    private Object newDefaultSshServer() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Object sshd = null;
+        Class sshdClass;
+        try {
+            sshdClass = Class.forName("org.apache.sshd.SshServer");
+        } catch (ClassNotFoundException e) {
+            sshdClass = Class.forName("org.apache.sshd.server.SshServer");
+        }
+
+        sshd = sshdClass.getDeclaredMethod("setUpDefaultServer", null).invoke(null);
+        assertNotNull(sshd);
+
+        return sshd;
+    }
+
+    private Class newKeyPairProviderClass() throws ClassNotFoundException {
+        Class keyPairProviderClass;
+        try {
+            keyPairProviderClass = Class.forName("org.apache.sshd.common.KeyPairProvider");
+        } catch (ClassNotFoundException e) {
+            keyPairProviderClass = Class.forName("org.apache.sshd.common.keyprovider.KeyPairProvider");
+        }
+
+        return keyPairProviderClass;
+    }
+
+    private Object newProvider() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+        Class providerClass = Class.forName("org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider");
+        Object provider = providerClass.getConstructor().newInstance();
+        assertNotNull(provider);
+
+        return provider;
+    }
+    private Class newAuthenticatorClass() throws ClassNotFoundException {
+        Class authenticatorClass;
+        try {
+            authenticatorClass = Class.forName("org.apache.sshd.server.auth.password.PasswordAuthenticator");
+        } catch(ClassNotFoundException e) {
+            authenticatorClass = Class.forName("org.apache.sshd.server.PasswordAuthenticator");
+        }
+
+        return authenticatorClass;
+    }
+
+    private Object newAuthenticator(Class authenticatorClass) throws ClassNotFoundException, IllegalArgumentException {
+        Object authenticator = java.lang.reflect.Proxy.newProxyInstance(
+                authenticatorClass.getClassLoader(),
+                new java.lang.Class[]{authenticatorClass},
+                new java.lang.reflect.InvocationHandler() {
+
+                    @Override
+                    public Object invoke(Object proxy, java.lang.reflect.Method method, Object[] args) throws java.lang.Throwable {
+                        if (method.getName().equals("authenticate")) {
+                            return "foomanchu".equals(args[1]);
+                        }
+
+                        return null;
+                    }
+                });
+        assertNotNull(authenticator);
+        return authenticator;
+    }
+
+    private Object newFactory() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+        Object factory = null;
+        Class factoryClass;
+        try {
+            factoryClass = Class.forName("org.apache.sshd.server.auth.UserAuthPassword$Factory");
+        } catch (ClassNotFoundException e) {
+            factoryClass = Class.forName("org.apache.sshd.server.auth.password.UserAuthPasswordFactory");
+        }
+
+        factory = factoryClass.getConstructor().newInstance();
+
+        assertNotNull(factory);
+        return factory;
     }
 }

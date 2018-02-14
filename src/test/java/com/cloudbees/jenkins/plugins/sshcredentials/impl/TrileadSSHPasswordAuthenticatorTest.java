@@ -34,31 +34,27 @@ import hudson.model.Items;
 import hudson.slaves.DumbSlave;
 import jenkins.security.MasterToSlaveCallable;
 
-import org.apache.sshd.SshServer;
-import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.server.PasswordAuthenticator;
-import org.apache.sshd.server.UserAuth;
-import org.apache.sshd.server.auth.UserAuthPassword;
-import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
-import org.apache.sshd.server.session.ServerSession;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 public class TrileadSSHPasswordAuthenticatorTest {
 
     private Connection connection;
     private StandardUsernamePasswordCredentials user;
-    private SshServer sshd;
+    private Object sshd;
 
     @Rule public JenkinsRule r = new JenkinsRule();
     
@@ -70,7 +66,7 @@ public class TrileadSSHPasswordAuthenticatorTest {
         }
         if (sshd!=null) {
             try {
-                sshd.stop(true);
+                invoke(sshd, "stop", new Class[] {Boolean.TYPE}, new Object[] {true});
             } catch (Throwable t) {
                 Logger.getLogger(getClass().getName()).log(Level.WARNING, "Problems shutting down ssh server", t);
             }
@@ -100,8 +96,9 @@ public class TrileadSSHPasswordAuthenticatorTest {
     @Test
     public void testPassword() throws Exception {
         sshd = createPasswordAuthenticatedSshServer();
-        sshd.start();
-        connection = new Connection("localhost", sshd.getPort());
+        invoke(sshd, "start", null, null);
+        int port = (Integer)invoke(sshd, "getPort", null, null);
+        connection = new Connection("localhost", port);
         connection.connect(new NoVerifier());
         TrileadSSHPasswordAuthenticator instance =
                 new TrileadSSHPasswordAuthenticator(connection, user);
@@ -111,28 +108,32 @@ public class TrileadSSHPasswordAuthenticatorTest {
         assertThat(instance.isAuthenticated(), is(true));
     }
 
-    private SshServer createPasswordAuthenticatedSshServer() {
+    private Object createPasswordAuthenticatedSshServer() throws InvocationTargetException, NoSuchMethodException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         return createPasswordAuthenticatedSshServer(null);
     }
 
-    private SshServer createPasswordAuthenticatedSshServer(final String username) {
-        SshServer sshd = SshServer.setUpDefaultServer();
-        sshd.setPort(0);
-        sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
-        sshd.setPasswordAuthenticator(new PasswordAuthenticator() {
-            public boolean authenticate(String _username, String password, ServerSession session) {
-                return (username == null || username.equals(_username)) && "foomanchu".equals(password);
-            }
-        });
-        sshd.setUserAuthFactories(Arrays.<NamedFactory<UserAuth>>asList(new UserAuthPassword.Factory()));
+    private Object createPasswordAuthenticatedSshServer(final String username) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, InstantiationException {
+        Object sshd = newDefaultSshServer();
+        Class keyPairProviderClass = newKeyPairProviderClass();
+        Object provider = newProvider();
+        Class authenticatorClass = newAuthenticatorClass();
+        Object authenticator = newAuthenticator(authenticatorClass, username);
+        Object factory = newFactory();
+
+        invoke(sshd, "setPort", new Class[] {Integer.TYPE}, new Object[] {0});
+        invoke(sshd, "setKeyPairProvider", new Class[] {keyPairProviderClass}, new Object[] {provider});
+        invoke(sshd, "setPasswordAuthenticator", new Class[] {authenticatorClass}, new Object[] {authenticator});
+        invoke(sshd, "setUserAuthFactories", new Class[] {List.class}, new Object[] {Arrays.asList(factory)});
+
         return sshd;
     }
 
     @Test
     public void testFactory() throws Exception {
         sshd = createPasswordAuthenticatedSshServer();
-        sshd.start();
-        connection = new Connection("localhost", sshd.getPort());
+        invoke(sshd, "start", null, null);
+        int port = (Integer)invoke(sshd, "getPort", null, null);
+        connection = new Connection("localhost", port);
         connection.connect(new NoVerifier());
         SSHAuthenticator instance = SSHAuthenticator.newInstance(connection, user);
         assertThat(instance.getAuthenticationMode(), is(SSHAuthenticator.Mode.AFTER_CONNECT));
@@ -144,15 +145,16 @@ public class TrileadSSHPasswordAuthenticatorTest {
     @Test
     public void testFactoryAltUsername() throws Exception {
         sshd = createPasswordAuthenticatedSshServer("bill");
-        sshd.start();
-        connection = new Connection("localhost", sshd.getPort());
+        invoke(sshd, "start", null, null);
+        int port = (Integer)invoke(sshd, "getPort", null, null);
+        connection = new Connection("localhost", port);
         connection.connect(new NoVerifier());
         SSHAuthenticator instance = SSHAuthenticator.newInstance(connection, user, null);
         assertThat(instance.getAuthenticationMode(), is(SSHAuthenticator.Mode.AFTER_CONNECT));
         assertThat(instance.canAuthenticate(), is(true));
         assertThat(instance.authenticate(), is(false));
         assertThat(instance.isAuthenticated(), is(false));
-        connection = new Connection("localhost", sshd.getPort());
+        connection = new Connection("localhost", port);
         connection.connect(new NoVerifier());
         instance = SSHAuthenticator.newInstance(connection, user, "bill");
         assertThat(instance.getAuthenticationMode(), is(SSHAuthenticator.Mode.AFTER_CONNECT));
@@ -166,14 +168,14 @@ public class TrileadSSHPasswordAuthenticatorTest {
      */
     @Test
     public void testSlave() throws Exception {
-        SshServer sshd = createPasswordAuthenticatedSshServer();
-        sshd.start();
+        Object sshd = createPasswordAuthenticatedSshServer();
+        invoke(sshd, "start", null, null);
 
         DumbSlave s = r.createSlave();
         Computer c = s.toComputer();
         c.connect(false).get();
 
-        final int port = sshd.getPort();
+        final int port = (Integer)invoke(sshd, "getPort", null, null);
 
         c.getChannel().call(new RemoteConnectionTest(port,user));
     }
@@ -208,5 +210,88 @@ public class TrileadSSHPasswordAuthenticatorTest {
         }
 
         private static final long serialVersionUID = 1L;
+    }
+
+    private Object invoke(Object target, String methodName, Class[] parameterTypes, Object[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        return target.getClass().getMethod(methodName, parameterTypes).invoke(target, args);
+    }
+
+    private Object newDefaultSshServer() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Object server = null;
+        Class serverClass;
+        try {
+            serverClass = Class.forName("org.apache.sshd.SshServer");
+        } catch (ClassNotFoundException e) {
+            serverClass = Class.forName("org.apache.sshd.server.SshServer");
+        }
+
+        server = serverClass.getDeclaredMethod("setUpDefaultServer", null).invoke(null);
+        assertNotNull(server);
+
+        return server;
+    }
+
+    private Class newKeyPairProviderClass() throws ClassNotFoundException {
+        Class keyPairProviderClass;
+        try {
+            keyPairProviderClass = Class.forName("org.apache.sshd.common.KeyPairProvider");
+        } catch (ClassNotFoundException e) {
+            keyPairProviderClass = Class.forName("org.apache.sshd.common.keyprovider.KeyPairProvider");
+        }
+
+        return keyPairProviderClass;
+    }
+
+    private Object newProvider() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+        Class providerClass = Class.forName("org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider");
+        Object provider = providerClass.getConstructor().newInstance();
+        assertNotNull(provider);
+
+        return provider;
+    }
+
+    private Class newAuthenticatorClass() throws ClassNotFoundException {
+        Class authenticatorClass;
+        try {
+            authenticatorClass = Class.forName("org.apache.sshd.server.auth.password.PasswordAuthenticator");
+        } catch(ClassNotFoundException e) {
+            authenticatorClass = Class.forName("org.apache.sshd.server.PasswordAuthenticator");
+        }
+
+        return authenticatorClass;
+    }
+
+    private Object newAuthenticator(Class authenticatorClass, final String userName) throws ClassNotFoundException, IllegalArgumentException {
+        Object authenticator = java.lang.reflect.Proxy.newProxyInstance(
+                authenticatorClass.getClassLoader(),
+                new java.lang.Class[]{authenticatorClass},
+                new java.lang.reflect.InvocationHandler() {
+
+                    @Override
+                    public Object invoke(Object proxy, java.lang.reflect.Method method, Object[] args) throws java.lang.Throwable {
+                        if (method.getName().equals("authenticate")) {
+                            return (userName == null || userName.equals(args[0])) && "foomanchu".equals(args[1]);
+                        }
+
+                        return null;
+                    }
+                });
+        assertNotNull(authenticator);
+        return authenticator;
+    }
+
+    private Object newFactory() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+        Object factory = null;
+        Class factoryClass;
+        try {
+            factoryClass = Class.forName("org.apache.sshd.server.auth.UserAuthPassword$Factory");
+        } catch (ClassNotFoundException e) {
+            factoryClass = Class.forName("org.apache.sshd.server.auth.password.UserAuthPasswordFactory");
+        }
+
+        factory = factoryClass.getConstructor().newInstance();
+
+        assertNotNull(factory);
+        return factory;
     }
 }

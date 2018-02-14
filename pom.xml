@@ -99,12 +99,6 @@
     </dependency>
     <!-- jenkins dependencies -->
     <!-- test dependencies -->
-    <dependency>
-      <groupId>org.apache.sshd</groupId>
-      <artifactId>sshd-core</artifactId>
-      <version>0.12.0</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
 </project>
