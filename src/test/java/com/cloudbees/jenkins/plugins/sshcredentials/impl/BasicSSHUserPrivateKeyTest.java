@@ -76,6 +76,12 @@ public class BasicSSHUserPrivateKeyTest {
         assertTrue(privateKey.endsWith(TESTKEY_END));
     }
 
+    @Test
+    public void ensureDirectEntryHasTrailingNewline() throws Exception {
+        String key = (new BasicSSHUserPrivateKey.DirectEntryPrivateKeySource("test")).getPrivateKey().toString();
+        assertEquals("test\n", key);
+    }
+
     // TODO demonstrate that all private key sources are round-tripped in XStream
 
     @Test
