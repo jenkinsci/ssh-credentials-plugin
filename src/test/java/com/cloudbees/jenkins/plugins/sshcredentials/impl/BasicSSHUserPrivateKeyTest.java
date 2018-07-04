@@ -51,24 +51,6 @@ public class BasicSSHUserPrivateKeyTest {
 
     @Rule public JenkinsRule r = new JenkinsRule();
 
-    @Test public void masterKeysOnSlave() throws Exception {
-        FilePath keyfile = r.jenkins.getRootPath().child("key");
-        keyfile.write("stuff", null);
-        SSHUserPrivateKey key = new BasicSSHUserPrivateKey(CredentialsScope.SYSTEM, "mycreds", "git", new BasicSSHUserPrivateKey.FileOnMasterPrivateKeySource(keyfile.getRemote()), null, null);
-        assertEquals("[stuff]", key.getPrivateKeys().toString());
-        // TODO would be more interesting to use a Docker fixture to demonstrate that the file load is happening only from the master side
-        assertEquals("[stuff]", r.createOnlineSlave().getChannel().call(new LoadPrivateKeys(key)));
-    }
-    private static class LoadPrivateKeys extends MasterToSlaveCallable<String,Exception> {
-        private final SSHUserPrivateKey key;
-        LoadPrivateKeys(SSHUserPrivateKey key) {
-            this.key = key;
-        }
-        @Override public String call() throws Exception {
-            return key.getPrivateKeys().toString();
-        }
-    }
-
     @LocalData
     @Test
     public void readOldCredentials() throws Exception {
