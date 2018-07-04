@@ -5,19 +5,23 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.SystemCredentialsProvider;
+import com.cloudbees.plugins.credentials.cli.ImportCredentialsAsXmlCommand;
 import com.cloudbees.plugins.credentials.cli.ListCredentialsAsXmlCommand;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.domains.DomainSpecification;
 import com.cloudbees.plugins.credentials.domains.HostnameSpecification;
 import hudson.cli.CLICommandInvoker;
 import jenkins.model.Jenkins;
+import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
+import java.util.List;
 
 import static hudson.cli.CLICommandInvoker.Matcher.succeeded;
 import static org.hamcrest.Matchers.*;
@@ -82,4 +86,29 @@ public class CLICommandsTest {
                 containsString("<privateKeySource class=\"com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey$UsersPrivateKeySource\"/>")
         ));
     }
+
+    @Test
+    public void importCredentialsAsXML() throws IOException {
+        InputStream input = this.getClass().getResourceAsStream("credentials-input.xml");
+        CLICommandInvoker invoker = new CLICommandInvoker(r, new ImportCredentialsAsXmlCommand());
+
+        assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
+                (Matcher) not(hasItem(hasProperty("name", is("smokes")))));
+
+        invoker.withStdin(input).invokeWithArgs("system::system::jenkins");
+        assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().keySet(),
+                (Matcher) hasItem(hasProperty("name", is("smokes"))));
+        assertThat(SystemCredentialsProvider.getInstance().getDomainCredentialsMap().get(new Domain("smokes", null, null)),
+                allOf(
+                        (Matcher) hasItem(hasProperty("id", is("smokes-id-1"))),
+                        (Matcher) hasItem(instanceOf(BasicSSHUserPrivateKey.class)),
+                        (Matcher) hasItem(hasProperty("id", is("smokes-id-2"))),
+                        (Matcher) hasItem(hasProperty("id", is("smokes-id-3"))),
+                        // Others are converted to DirectEntryPrivateKeySource on readResolve
+                        (Matcher) hasItem(hasProperty("privateKeySource", instanceOf(BasicSSHUserPrivateKey.DirectEntryPrivateKeySource.class)))
+                )
+        );
+
+    }
+
 }
