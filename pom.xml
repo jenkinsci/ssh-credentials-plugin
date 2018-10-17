@@ -33,7 +33,7 @@
   </parent>
 
   <artifactId>ssh-credentials</artifactId>
-  <version>1.14-SNAPSHOT</version>
+  <version>1.15-SNAPSHOT</version>
   <packaging>hpi</packaging>
 
   <name>SSH Credentials Plugin</name>
@@ -70,8 +70,8 @@
   </scm>
 
   <properties>
-    <jenkins.version>1.625.3</jenkins.version>
-    <java.level>7</java.level>
+    <jenkins.version>2.60.3</jenkins.version>
+    <java.level>8</java.level>
   </properties>
 
   <repositories>
@@ -99,10 +99,16 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>credentials</artifactId>
-      <version>2.1.0</version>
+      <version>2.1.17</version>
     </dependency>
     <!-- jenkins dependencies -->
     <!-- test dependencies -->
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>cloudbees-folder</artifactId>
+      <version>6.4</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 </project>

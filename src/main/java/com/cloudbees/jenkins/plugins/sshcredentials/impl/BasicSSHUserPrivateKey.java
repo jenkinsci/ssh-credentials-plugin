@@ -26,13 +26,13 @@ package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
-import com.cloudbees.plugins.credentials.CredentialsSnapshotTaker;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
+import hudson.model.Items;
 import hudson.remoting.Channel;
 import hudson.util.Secret;
 import java.io.File;
@@ -40,6 +40,8 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,6 +49,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import hudson.util.XStream2;
 import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
@@ -146,16 +150,6 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             );
         }
         return this;
-    }
-
-    private Object writeReplace() {
-        if (/* XStream */Channel.current() == null) {
-            return this;
-        }
-        if (privateKeySource == null || privateKeySource.isSnapshotSource()) {
-            return this;
-        }
-        return CredentialsProvider.snapshot(this);
     }
 
     /**
@@ -290,7 +284,9 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          *
          * @return {@code true} if and only if the source is self contained.
          * @since 1.7
+         * @deprecated no more used since FileOnMaster- and Users- PrivateKeySource are deprecated too
          */
+        @Deprecated
         public boolean isSnapshotSource() {
             return false;
         }
@@ -371,7 +367,9 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
 
     /**
      * Let the user reference a file on the disk.
+     * @deprecated This approach has security vulnerability and should be migrated to {@link DirectEntryPrivateKeySource}
      */
+    @Deprecated
     public static class FileOnMasterPrivateKeySource extends PrivateKeySource {
 
         /**
@@ -394,8 +392,6 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          */
         private transient volatile long nextCheckLastModified;
 
-
-        @DataBoundConstructor
         public FileOnMasterPrivateKeySource(String privateKeyFile) {
             this.privateKeyFile = privateKeyFile;
         }
@@ -436,7 +432,12 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                 // this is a borked upgrade, not actually the file name but is actually the key contents
                 return new DirectEntryPrivateKeySource(privateKeyFile);
             }
-            return this;
+
+            Jenkins.getActiveInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+
+            LOGGER.log(Level.INFO, "SECURITY-440: Migrating FileOnMasterPrivateKeySource to DirectEntryPrivateKeySource");
+            // read the content of the file and then migrate to Direct
+            return new DirectEntryPrivateKeySource(getPrivateKeys());
         }
 
         @Override
@@ -453,26 +454,13 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             }
             return lastModified;
         }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Extension
-        public static class DescriptorImpl extends PrivateKeySourceDescriptor {
-
-            /**
-             * {@inheritDoc}
-             */
-            @Override
-            public String getDisplayName() {
-                return Messages.BasicSSHUserPrivateKey_FileOnMasterPrivateKeySourceDisplayName();
-            }
-        }
     }
 
     /**
      * Let the user
+     * @deprecated This approach has security vulnerability and should be migrated to {@link DirectEntryPrivateKeySource}
      */
+    @Deprecated
     public static class UsersPrivateKeySource extends PrivateKeySource {
 
         /**
@@ -489,10 +477,6 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          * When we will next try a refresh of the status.
          */
         private transient volatile long nextCheckLastModified;
-
-        @DataBoundConstructor
-        public UsersPrivateKeySource() {
-        }
 
         private List<File> files() {
             List<File> files = new ArrayList<File>();
@@ -535,51 +519,27 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             return lastModified;
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Extension
-        public static class DescriptorImpl extends PrivateKeySourceDescriptor {
+        private Object readResolve() {
+            Jenkins.getActiveInstance().checkPermission(Jenkins.RUN_SCRIPTS);
 
-            /**
-             * {@inheritDoc}
-             */
-            @Override
-            public String getDisplayName() {
-                return Messages.BasicSSHUserPrivateKey_UsersPrivateKeySourceDisplayName();
-            }
+            LOGGER.log(Level.INFO, "SECURITY-440: Migrating UsersPrivateKeySource to DirectEntryPrivateKeySource");
+            // read the content of the file and then migrate to Direct
+            return new DirectEntryPrivateKeySource(getPrivateKeys());
         }
     }
 
-    /**
-     * @since 1.7
-     */
-    @Extension
-    public static class CredentialsSnapshotTakerImpl extends CredentialsSnapshotTaker<SSHUserPrivateKey> {
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Class<SSHUserPrivateKey> type() {
-            return SSHUserPrivateKey.class;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public SSHUserPrivateKey snapshot(SSHUserPrivateKey credentials) {
-            if (credentials instanceof BasicSSHUserPrivateKey) {
-                final PrivateKeySource keySource = ((BasicSSHUserPrivateKey) credentials).getPrivateKeySource();
-                if (keySource.isSnapshotSource()) {
-                    return credentials;
-                }
-            }
-            final Secret passphrase = credentials.getPassphrase();
-            return new BasicSSHUserPrivateKey(credentials.getScope(), credentials.getId(), credentials.getUsername(),
-                    new DirectEntryPrivateKeySource(credentials.getPrivateKeys()),
-                    passphrase == null ? null : passphrase.getEncryptedValue(), credentials.getDescription());
+    static {
+        try {
+            // the critical field allow the permission check to make the XML read to fail completely in case of violation
+            // TODO: Remove reflection once baseline is updated past 2.85.
+            Method m = XStream2.class.getMethod("addCriticalField", Class.class, String.class);
+            m.invoke(Items.XSTREAM2, BasicSSHUserPrivateKey.class, "privateKeySource");
+        } catch (IllegalAccessException e) {
+            throw new ExceptionInInitializerError(e);
+        } catch (InvocationTargetException e) {
+            throw new ExceptionInInitializerError(e);
+        } catch (NoSuchMethodException e) {
+            throw new ExceptionInInitializerError(e);
         }
     }
 }
