@@ -24,9 +24,7 @@
 package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
-import com.google.common.base.Optional;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
@@ -34,7 +32,6 @@ import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Items;
-import hudson.remoting.Channel;
 import hudson.util.Secret;
 import java.io.File;
 import java.io.IOException;
@@ -106,12 +103,11 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
      * @param description      the description.
      */
     @DataBoundConstructor
-    public BasicSSHUserPrivateKey(CredentialsScope scope, String id, String username, String privateKey,
+    public BasicSSHUserPrivateKey(CredentialsScope scope, String id, String username, Secret privateKey,
                                   String passphrase,
                                   String description) {
         super(scope, id, username, description);
-        privateKey = StringUtils.trimToNull(privateKey);
-        this.privateKeySource = privateKey == null ? null : new DirectEntryPrivateKeySource(privateKey);
+        this.privateKeySource = new DirectEntryPrivateKeySource(privateKey);
         this.passphrase = fixEmpty(passphrase == null ? null : Secret.fromString(passphrase));
     }
 
@@ -308,6 +304,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
     /**
      * Descriptor for a {@link PrivateKeySource}
      */
+    @Deprecated
     public static abstract class PrivateKeySourceDescriptor extends Descriptor<PrivateKeySource> {
     }
 
@@ -322,9 +319,12 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
 
         private final Secret privateKey;
 
-        @DataBoundConstructor
+        public DirectEntryPrivateKeySource(Secret privateKey) {
+            this.privateKey = privateKey;
+        }
+
         public DirectEntryPrivateKeySource(String privateKey) {
-            this.privateKey = Secret.fromString(privateKey);
+            this(Secret.fromString(privateKey));
         }
 
         public DirectEntryPrivateKeySource(List<String> privateKeys) {
@@ -359,21 +359,6 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         @Override
         public boolean isSnapshotSource() {
             return true;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Extension
-        public static class DescriptorImpl extends PrivateKeySourceDescriptor {
-
-            /**
-             * {@inheritDoc}
-             */
-            @Override
-            public String getDisplayName() {
-                return Messages.BasicSSHUserPrivateKey_DirectEntryPrivateKeySourceDisplayName();
-            }
         }
     }
 
