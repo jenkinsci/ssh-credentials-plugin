@@ -26,6 +26,7 @@ package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.google.common.base.Optional;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
@@ -100,11 +101,22 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
      *
      * @param scope            the credentials scope
      * @param username         the username.
-     * @param privateKeySource the private key.
+     * @param privateKey       the private key.
      * @param passphrase       the password.
      * @param description      the description.
      */
     @DataBoundConstructor
+    public BasicSSHUserPrivateKey(CredentialsScope scope, String id, String username, String privateKey,
+                                  String passphrase,
+                                  String description) {
+        super(scope, id, username, description);
+        privateKey = StringUtils.trimToNull(privateKey);
+        this.privateKeySource = privateKey == null ? null : new DirectEntryPrivateKeySource(privateKey);
+        this.passphrase = fixEmpty(passphrase == null ? null : Secret.fromString(passphrase));
+    }
+
+
+    @Deprecated
     public BasicSSHUserPrivateKey(CredentialsScope scope, String id, String username, PrivateKeySource privateKeySource,
                                   String passphrase,
                                   String description) {
