@@ -62,7 +62,7 @@
   </scm>
 
   <properties>
-    <jenkins.version>2.60.3</jenkins.version>
+    <jenkins.version>2.73.3</jenkins.version>
     <java.level>8</java.level>
   </properties>
 

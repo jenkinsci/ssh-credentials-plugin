@@ -194,6 +194,7 @@ public class JSchSSHPasswordAuthenticatorTest {
     }
 
     private Object newDefaultSshServer() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        // TODO remove reflection in favor of 1.x packages
         Object sshd = null;
         Class sshdClass;
         try {
