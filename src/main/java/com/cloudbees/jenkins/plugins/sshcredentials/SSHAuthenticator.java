@@ -47,6 +47,7 @@ import net.jcip.annotations.GuardedBy;
 
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.anyOf;
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
+import jenkins.util.JenkinsJVM;
 
 /**
  * Abstraction for something that can authenticate an SSH connection.
@@ -231,8 +232,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      * @throws IllegalStateException if you invoke from a build agent
      */
     private static List<SSHAuthenticatorFactory> lookupFactories() {
-        // TODO once Jenkins core has a class that can be used to detect running on build agent use that to gate instead
-        return Jenkins.getInstance() == null ? null : ExtensionList.lookup(SSHAuthenticatorFactory.class);
+        return JenkinsJVM.isJenkinsJVM() ? ExtensionList.lookup(SSHAuthenticatorFactory.class) : null;
     }
 
     /**
