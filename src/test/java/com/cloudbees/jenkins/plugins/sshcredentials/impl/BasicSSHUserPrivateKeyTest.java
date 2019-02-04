@@ -27,7 +27,6 @@ package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 import com.cloudbees.hudson.plugins.folder.Folder;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
-import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
 import java.util.List;
@@ -36,10 +35,8 @@ import hudson.cli.CLICommandInvoker;
 import hudson.cli.UpdateJobCommand;
 import hudson.model.Hudson;
 import hudson.model.Job;
-import hudson.remoting.Callable;
 import hudson.security.ACL;
 import jenkins.model.Jenkins;
-import jenkins.security.MasterToSlaveCallable;
 
 import org.junit.Test;
 
@@ -53,7 +50,6 @@ import org.junit.Rule;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.recipes.LocalData;
-
 
 public class BasicSSHUserPrivateKeyTest {
 
