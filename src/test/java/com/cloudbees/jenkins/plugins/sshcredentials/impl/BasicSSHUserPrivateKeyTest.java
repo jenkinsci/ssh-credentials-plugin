@@ -79,8 +79,8 @@ public class BasicSSHUserPrivateKeyTest {
     // TODO demonstrate that all private key sources are round-tripped in XStream
 
     @Test
+    @LocalData
     @Issue("SECURITY-440")
-    @LocalData("updateJob")
     public void userWithoutRunScripts_cannotMigrateDangerousPrivateKeySource() throws Exception {
         Folder folder = r.jenkins.createProject(Folder.class, "folder1");
         
