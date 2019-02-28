@@ -337,8 +337,8 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          * @return the private key.
          */
         @SuppressWarnings("unused") // used by Jelly EL
-        public String getPrivateKey() {
-            return Secret.toString(privateKey);
+        public Secret getPrivateKey() {
+            return privateKey;
         }
 
         /**

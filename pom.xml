@@ -95,6 +95,11 @@
       <version>0.1.55</version>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>io.jenkins.temp.jelly</groupId>
+      <artifactId>multiline-secrets-ui</artifactId>
+      <version>1.0</version>
+    </dependency>
     <!-- plugin dependencies -->
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
