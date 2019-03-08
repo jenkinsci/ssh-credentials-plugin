@@ -31,6 +31,7 @@ import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.ServerHostKeyVerifier;
 import hudson.model.Computer;
 import hudson.model.Items;
+import hudson.model.TaskListener;
 import hudson.slaves.DumbSlave;
 import jenkins.security.MasterToSlaveCallable;
 
@@ -177,7 +178,8 @@ public class TrileadSSHPasswordAuthenticatorTest {
 
         final int port = (Integer)invoke(sshd, "getPort", null, null);
 
-        c.getChannel().call(new RemoteConnectionTest(port,user));
+        TaskListener l = r.createTaskListener();
+        c.getChannel().call(new RemoteConnectionTest(port, user));
     }
 
     private static class NoVerifier implements ServerHostKeyVerifier {
@@ -203,7 +205,7 @@ public class TrileadSSHPasswordAuthenticatorTest {
 
             assertThat(instance.getAuthenticationMode(), is(SSHAuthenticator.Mode.AFTER_CONNECT));
             assertThat(instance.canAuthenticate(), is(true));
-            assertThat(instance.authenticate(), is(true));
+            instance.authenticateOrFail();
             assertThat(instance.isAuthenticated(), is(true));
             connection.close();
             return null;

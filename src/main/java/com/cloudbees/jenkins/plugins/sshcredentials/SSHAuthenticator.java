@@ -444,6 +444,24 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
     }
 
     /**
+     * @since TODO
+     * @throws IOException Failure reason
+     */
+    public final void authenticateOrFail() throws IOException {
+        synchronized (lock) {
+            if (!canAuthenticate()) {
+                throw new IOException("Cannot authenticate");
+            }
+
+            try {
+                authenticated = doAuthenticate();
+            } catch (Throwable t) {
+                throw  new IOException("SSH authentication failed", t);
+            }
+        }
+    }
+
+    /**
      * Authenticate the bound connection using the supplied credentials.
      *
      * @return For an {@link #getAuthenticationMode()} of {@link Mode#BEFORE_CONNECT} the return value is

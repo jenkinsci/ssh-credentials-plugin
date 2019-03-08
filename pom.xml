@@ -52,6 +52,14 @@
       <id>stephenconnolly</id>
       <name>Stephen Connolly</name>
     </developer>
+    <developer>
+      <id>oleg_nenashev</id>
+      <name>Oleg Nenashev</name>
+    </developer>
+    <developer>
+      <id>dnusbaum</id>
+      <name>Devin Nusbaum</name>
+    </developer>
   </developers>
 
   <scm>
