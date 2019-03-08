@@ -29,7 +29,8 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>3.5</version>
+    <version>3.37</version>
+    <relativePath />
   </parent>
 
   <artifactId>ssh-credentials</artifactId>
@@ -41,9 +42,8 @@
   <url>https://wiki.jenkins.io/display/JENKINS/SSH+Credentials+Plugin</url>
   <licenses>
     <license>
-      <name>The MIT license</name>
-      <url>http://www.opensource.org/licenses/mit-license.php</url>
-      <distribution>repo</distribution>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
     </license>
   </licenses>
 
@@ -70,7 +70,7 @@
   </scm>
 
   <properties>
-    <jenkins.version>2.60.3</jenkins.version>
+    <jenkins.version>2.73.3</jenkins.version>
     <java.level>8</java.level>
   </properties>
 
@@ -92,7 +92,7 @@
     <dependency>
       <groupId>com.jcraft</groupId>
       <artifactId>jsch</artifactId>
-      <version>0.1.54</version>
+      <version>0.1.55</version>
       <optional>true</optional>
     </dependency>
     <!-- plugin dependencies -->
