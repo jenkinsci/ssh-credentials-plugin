@@ -98,6 +98,7 @@
       <optional>true</optional>
     </dependency>
     <dependency>
+      <!-- TODO: after upgrading jenkins.version >= 2.171, migrate dependency -->
       <groupId>io.jenkins.temp.jelly</groupId>
       <artifactId>multiline-secrets-ui</artifactId>
       <version>1.0</version>
