@@ -310,9 +310,13 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
 
         private final Secret privateKey;
 
-        @DataBoundConstructor
         public DirectEntryPrivateKeySource(String privateKey) {
-            this.privateKey = Secret.fromString(privateKey);
+            this(Secret.fromString(privateKey));
+        }
+
+        @DataBoundConstructor
+        public DirectEntryPrivateKeySource(Secret privateKey) {
+            this.privateKey = privateKey;
         }
 
         public DirectEntryPrivateKeySource(List<String> privateKeys) {
