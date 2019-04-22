@@ -34,7 +34,7 @@
   </parent>
 
   <artifactId>ssh-credentials</artifactId>
-  <version>1.16-SNAPSHOT</version>
+  <version>${revision}${changelist}</version>
   <packaging>hpi</packaging>
 
   <name>SSH Credentials Plugin</name>
@@ -66,10 +66,12 @@
     <connection>scm:git:git://github.com/jenkinsci/ssh-credentials-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/ssh-credentials-plugin.git</developerConnection>
     <url>http://github.com/jenkinsci/ssh-credentials-plugin</url>
-    <tag>HEAD</tag>
+    <tag>${scmTag}</tag>
   </scm>
 
   <properties>
+    <revision>1.16</revision>
+    <changelist>-SNAPSHOT</changelist>
     <jenkins.version>2.73.3</jenkins.version>
     <java.level>8</java.level>
   </properties>
@@ -94,6 +96,12 @@
       <artifactId>jsch</artifactId>
       <version>0.1.55</version>
       <optional>true</optional>
+    </dependency>
+    <dependency>
+      <!-- TODO: after upgrading jenkins.version >= 2.171, migrate dependency -->
+      <groupId>io.jenkins.temp.jelly</groupId>
+      <artifactId>multiline-secrets-ui</artifactId>
+      <version>1.0</version>
     </dependency>
     <!-- plugin dependencies -->
     <dependency>

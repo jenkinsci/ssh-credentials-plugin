@@ -310,9 +310,13 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
 
         private final Secret privateKey;
 
-        @DataBoundConstructor
         public DirectEntryPrivateKeySource(String privateKey) {
-            this.privateKey = Secret.fromString(privateKey);
+            this(Secret.fromString(privateKey));
+        }
+
+        @DataBoundConstructor
+        public DirectEntryPrivateKeySource(Secret privateKey) {
+            this.privateKey = privateKey;
         }
 
         public DirectEntryPrivateKeySource(List<String> privateKeys) {
@@ -337,8 +341,8 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          * @return the private key.
          */
         @SuppressWarnings("unused") // used by Jelly EL
-        public String getPrivateKey() {
-            return Secret.toString(privateKey);
+        public Secret getPrivateKey() {
+            return privateKey;
         }
 
         /**
