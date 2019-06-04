@@ -5,14 +5,12 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import io.jenkins.plugins.casc.misc.ExportImportRoundTripAbstractTest;
 import jenkins.model.Jenkins;
-import org.hamcrest.Matchers;
 import org.jvnet.hudson.test.RestartableJenkinsRule;
 
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 public class ExportImportRoundTripCasCSSHCredentialsTest extends ExportImportRoundTripAbstractTest {
     @Override
@@ -33,12 +31,7 @@ public class ExportImportRoundTripCasCSSHCredentialsTest extends ExportImportRou
         assertEquals("the description of userid2", cred2.getDescription());
         assertEquals(1, cred2.getPrivateKeySource().getPrivateKeys().size());
         String directKey = cred2.getPrivateKeySource().getPrivateKeys().get(0);
-        assertThat(directKey, Matchers.containsString("Piikjvd/2HYfEYEG"));
-    }
-
-    @Override
-    public String configResource() {
-        return "ssh-credentials.yml";
+        assertEquals("sp0ds9d+skkfjf", directKey);
     }
 
     @Override
