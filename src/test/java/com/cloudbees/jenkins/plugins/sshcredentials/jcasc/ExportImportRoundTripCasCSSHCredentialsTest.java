@@ -3,7 +3,7 @@ package com.cloudbees.jenkins.plugins.sshcredentials.jcasc;
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
-import io.jenkins.plugins.casc.misc.ExportImportRoundTripAbstractTest;
+import io.jenkins.plugins.casc.misc.RoundTripAbstractTest;
 import jenkins.model.Jenkins;
 import org.jvnet.hudson.test.RestartableJenkinsRule;
 
@@ -12,7 +12,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-public class ExportImportRoundTripCasCSSHCredentialsTest extends ExportImportRoundTripAbstractTest {
+public class ExportImportRoundTripCasCSSHCredentialsTest extends RoundTripAbstractTest {
     @Override
     public void assertConfiguredAsExpected(RestartableJenkinsRule restartableJenkinsRule, String s) {
         List<StandardUsernamePasswordCredentials> creds = CredentialsProvider.lookupCredentials(StandardUsernamePasswordCredentials.class, Jenkins.getInstanceOrNull(), null, Collections.emptyList());
