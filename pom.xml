@@ -78,8 +78,7 @@
     <changelist>-SNAPSHOT</changelist>
     <jenkins.version>2.138.4</jenkins.version>
     <java.level>8</java.level>
-    <!-- TODO: change when https://github.com/jenkinsci/configuration-as-code-plugin/pull/908 is released -->
-    <jcasc.version>1.20-20190607.070007-5</jcasc.version>
+    <jcasc.version>1.20</jcasc.version>
   </properties>
 
   <repositories>
