@@ -311,7 +311,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         private final Secret privateKey;
 
         public DirectEntryPrivateKeySource(String privateKey) {
-            this(Secret.fromString(privateKey));
+            this(Secret.fromString(privateKey.endsWith("\n") ? privateKey : privateKey + "\n"));
         }
 
         @DataBoundConstructor
