@@ -74,7 +74,7 @@
     <changelist>-SNAPSHOT</changelist>
     <jenkins.version>2.138.4</jenkins.version>
     <java.level>8</java.level>
-    <jcasc.version>1.20</jcasc.version>
+    <jcasc.version>1.30-20190908.202458-1</jcasc.version>
   </properties>
 
   <repositories>

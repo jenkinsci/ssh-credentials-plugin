@@ -36,6 +36,6 @@ public class ExportImportRoundTripCasCSSHCredentialsTest extends RoundTripAbstra
 
     @Override
     public String stringInLogExpected() {
-        return "passphrase = passphrase-of-userid2";
+        return "Setting class com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey.passphrase = ****";
     }
 }
