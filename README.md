@@ -1,7 +1,7 @@
 Jenkins SSH Credentials Plugin
 ==============================
 
-Read more: [http://wiki.jenkins-ci.org/display/JENKINS/Credentials+Plugin](http://wiki.jenkins-ci.org/display/JENKINS/SSH+Credentials+Plugin)
+Read more: [https://plugins.jenkins.io/ssh-credentials](https://plugins.jenkins.io/ssh-credentials)
 
 Development
 ===========
