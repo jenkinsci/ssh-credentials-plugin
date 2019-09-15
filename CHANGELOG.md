@@ -6,7 +6,7 @@
 
 ## Version 1.17.1 (Jul 10, 2019)
 
-JENKINS-50181: ssh-agent/ssh-credentials-plugin failing because ssh-add expects a newline in the keyfile
+[JENKINS-50181](https://issues.jenkins-ci.org/browse/JENKINS-50181): ssh-agent/ssh-credentials-plugin failing because ssh-add expects a newline in the keyfile
 
 ## Version 1.17 (Jun 10, 2019)
 
