@@ -39,7 +39,7 @@
 
   <name>SSH Credentials Plugin</name>
   <description>Allows storage of SSH credentials in Jenkins</description>
-  <url>https://wiki.jenkins.io/display/JENKINS/SSH+Credentials+Plugin</url>
+  <url>https://github.com/jenkinsci/ssh-credentials-plugin/tree/master/doc</url>
   <licenses>
     <license>
       <name>MIT License</name>
