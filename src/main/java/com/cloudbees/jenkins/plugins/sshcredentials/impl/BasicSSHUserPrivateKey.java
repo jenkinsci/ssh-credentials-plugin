@@ -179,7 +179,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                                 passphrase == null ? "" : passphrase.getPlainText())
                                 .toOpenSSH());
                     } else {
-                        privateKeys.add(privateKey);
+                        privateKeys.add(privateKey.endsWith("\n") ? privateKey : privateKey + "\n");
                     }
                 } catch (IOException e) {
                     // ignore

@@ -55,7 +55,7 @@ public class BasicSSHUserPrivateKeyTest {
 
     final static String TESTKEY_ID = "bc07f814-78bd-4b29-93d4-d25b93285f93";
     final static String TESTKEY_BEGIN = "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAu1r+HHzmpybc4iwoP5+44FjvcaMkNEWeGQZlmPwLx70XW8+8";
-    final static String TESTKEY_END = "sroT/IHW2jKMD0v8kKLUnKCZYzlw0By7+RvJ8lgzHB0D71f6EC1UWg==\n-----END RSA PRIVATE KEY-----";
+    final static String TESTKEY_END = "sroT/IHW2jKMD0v8kKLUnKCZYzlw0By7+RvJ8lgzHB0D71f6EC1UWg==\n-----END RSA PRIVATE KEY-----\n";
 
     @Rule public JenkinsRule r = new JenkinsRule();
 
