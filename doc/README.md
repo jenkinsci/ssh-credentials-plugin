@@ -1,12 +1,12 @@
 # SSH Credentials Plugin
 
-This plugin allows you to store SSH credentials in Jenkins.For more information on how to create and use credentials in general in Jenkins, please visit the Credentials Plugin wiki page.  
+This plugin allows you to store SSH credentials in Jenkins. For more information on how to create and use credentials in general in Jenkins, please visit the [Credentials Plugin description page](https://plugins.jenkins.io/credentials).  
 
 ## For Developers
 
 ### Using with Trilead SSH client library
 
-Get the authenticator after you have opened the connection and let it handle authentication for you
+Get the authenticator after you have opened the connection and let it handle authentication for you:
 
 ```
 StandardUsernameCredentials user = ...
@@ -18,7 +18,7 @@ if (!authenticator.authenticate()) throw new RuntimeException("Couldn't authenti
 
 ### Using with JSch SSH client library
 
-Get the authenticator before you have opened the connection (using the JSchConnector, 
+Get the authenticator before you have opened the connection (using the `JSchConnector`, 
 needed because of the strange dichotomy with JSch between public key authentication 
 and user/password authentication) and let feed in authentication for you:
 
@@ -35,4 +35,4 @@ session.connect(timeout);
 
 ## Version history
 
-Please refert to the [changelog](/CHANGELOG.md)
+Please refer to the [changelog](/CHANGELOG.md)
