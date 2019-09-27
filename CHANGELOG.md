@@ -1,6 +1,6 @@
 # Version History
 
-## Version 1.17.3 (Sep 10, 2019)
+## Version 1.17.3 (Sep 24, 2019)
 [JENKINS-50181](https://issues.jenkins-ci.org/browse/JENKINS-50181): Ensure private key ends with a newline when returning it
 
 ## Version 1.17.2 (Sep 10, 2019)
