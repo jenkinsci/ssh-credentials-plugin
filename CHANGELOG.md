@@ -1,5 +1,8 @@
 # Version History
 
+## Version 1.17.3 (Sep 24, 2019)
+[JENKINS-50181](https://issues.jenkins-ci.org/browse/JENKINS-50181): Ensure private key ends with a newline when returning it
+
 ## Version 1.17.2 (Sep 10, 2019)
 
 [PR-44](https://github.com/jenkinsci/ssh-credentials-plugin/pull/44): update JCasC to 1.30.
