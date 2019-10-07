@@ -1,5 +1,9 @@
 # Version History
 
+## Version 1.18 (Oct 07, 2019)
+
+Update the minimum Jenkins core requirement to 2.190.1.
+
 ## Version 1.17.3 (Sep 24, 2019)
 [JENKINS-50181](https://issues.jenkins-ci.org/browse/JENKINS-50181): Ensure private key ends with a newline when returning it
 
