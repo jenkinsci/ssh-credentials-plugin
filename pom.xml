@@ -29,7 +29,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>3.50</version>
+    <version>3.55</version>
     <relativePath />
   </parent>
 
@@ -76,7 +76,7 @@
     <java.level>8</java.level>
     <slf4jVersion>1.7.26</slf4jVersion> <!-- TODO pending https://github.com/jenkinsci/plugin-pom/pull/229 -->
     <!-- TODO use BOM after https://github.com/jenkinsci/bom/pull/110 -->
-    <jcasc.version>1.30</jcasc.version>
+    <jcasc.version>1.35</jcasc.version>
   </properties>
 
   <repositories>
@@ -126,10 +126,9 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.jenkins</groupId>
-      <artifactId>configuration-as-code</artifactId>
+      <groupId>io.jenkins.configuration-as-code</groupId>
+      <artifactId>test-harness</artifactId>
       <version>${jcasc.version}</version>
-      <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
   </dependencies>
