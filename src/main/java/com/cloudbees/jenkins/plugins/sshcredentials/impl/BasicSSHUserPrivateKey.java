@@ -24,7 +24,6 @@
 package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -33,15 +32,12 @@ import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Items;
-import hudson.remoting.Channel;
 import hudson.util.Secret;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.io.StringReader;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,7 +46,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import hudson.util.XStream2;
 import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
@@ -168,7 +163,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         }
         long lastModified = privateKeySource.getPrivateKeysLastModified();
         if (privateKeys == null || privateKeys.isEmpty() || lastModified > privateKeysLastModified) {
-            List<String> privateKeys = new ArrayList<String>();
+            List<String> privateKeys = new ArrayList<>();
             for (String privateKey : privateKeySource.getPrivateKeys()) {
                 try {
                     if (PuTTYKey.isPuTTYKeyFile(new StringReader(privateKey))) {
@@ -219,7 +214,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         }
 
         public DescriptorExtensionList<PrivateKeySource, Descriptor<PrivateKeySource>> getPrivateKeySources() {
-            return Jenkins.getActiveInstance().getDescriptorList(PrivateKeySource.class);
+            return Jenkins.get().getDescriptorList(PrivateKeySource.class);
         }
 
         /**
@@ -235,22 +230,22 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             }) {
                 IconSet.icons.addIcon(new Icon(
                         String.format("icon-ssh-credentials-%s icon-sm", name),
-                        String.format("ssh-credentials/images/16x16/%s.png", name),
+                        String.format("ssh-credentials/images/%s.svg", name),
                         Icon.ICON_SMALL_STYLE, IconType.PLUGIN)
                 );
                 IconSet.icons.addIcon(new Icon(
                         String.format("icon-ssh-credentials-%s icon-md", name),
-                        String.format("ssh-credentials/images/24x24/%s.png", name),
+                        String.format("ssh-credentials/images/%s.svg", name),
                         Icon.ICON_MEDIUM_STYLE, IconType.PLUGIN)
                 );
                 IconSet.icons.addIcon(new Icon(
                         String.format("icon-ssh-credentials-%s icon-lg", name),
-                        String.format("ssh-credentials/images/32x32/%s.png", name),
+                        String.format("ssh-credentials/images/%s.svg", name),
                         Icon.ICON_LARGE_STYLE, IconType.PLUGIN)
                 );
                 IconSet.icons.addIcon(new Icon(
                         String.format("icon-ssh-credentials-%s icon-xlg", name),
-                        String.format("ssh-credentials/images/48x48/%s.png", name),
+                        String.format("ssh-credentials/images/%s.svg", name),
                         Icon.ICON_XLARGE_STYLE, IconType.PLUGIN)
                 );
             }
@@ -331,7 +326,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         public List<String> getPrivateKeys() {
             String privateKeys = Secret.toString(privateKey);
             return StringUtils.isBlank(privateKeys)
-                    ? Collections.<String>emptyList()
+                    ? Collections.emptyList()
                     : Arrays.asList(StringUtils.split(privateKeys, "\f"));
         }
 
@@ -437,7 +432,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                 return new DirectEntryPrivateKeySource(privateKeyFile);
             }
 
-            Jenkins.getActiveInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+            Jenkins.get().checkPermission(Jenkins.RUN_SCRIPTS);
 
             LOGGER.log(Level.INFO, "SECURITY-440: Migrating FileOnMasterPrivateKeySource to DirectEntryPrivateKeySource");
             // read the content of the file and then migrate to Direct
@@ -483,7 +478,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         private transient volatile long nextCheckLastModified;
 
         private List<File> files() {
-            List<File> files = new ArrayList<File>();
+            List<File> files = new ArrayList<>();
             File sshHome = new File(new File(System.getProperty("user.home")), ".ssh");
             for (String keyName : Arrays.asList("id_ecdsa", "id_ed25519", "id_rsa", "id_dsa", "identity")) {
                 File key = new File(sshHome, keyName);
@@ -500,7 +495,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         @NonNull
         @Override
         public List<String> getPrivateKeys() {
-            List<String> keys = new ArrayList<String>();
+            List<String> keys = new ArrayList<>();
             for (File file : files()) {
                 try {
                     keys.add(FileUtils.readFileToString(file));
@@ -524,7 +519,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         }
 
         private Object readResolve() {
-            Jenkins.getActiveInstance().checkPermission(Jenkins.RUN_SCRIPTS);
+            Jenkins.get().checkPermission(Jenkins.RUN_SCRIPTS);
 
             LOGGER.log(Level.INFO, "SECURITY-440: Migrating UsersPrivateKeySource to DirectEntryPrivateKeySource");
             // read the content of the file and then migrate to Direct
@@ -533,17 +528,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
     }
 
     static {
-        try {
-            // the critical field allow the permission check to make the XML read to fail completely in case of violation
-            // TODO: Remove reflection once baseline is updated past 2.85.
-            Method m = XStream2.class.getMethod("addCriticalField", Class.class, String.class);
-            m.invoke(Items.XSTREAM2, BasicSSHUserPrivateKey.class, "privateKeySource");
-        } catch (IllegalAccessException e) {
-            throw new ExceptionInInitializerError(e);
-        } catch (InvocationTargetException e) {
-            throw new ExceptionInInitializerError(e);
-        } catch (NoSuchMethodException e) {
-            throw new ExceptionInInitializerError(e);
-        }
+        // the critical field allow the permission check to make the XML read to fail completely in case of violation
+        Items.XSTREAM2.addCriticalField(BasicSSHUserPrivateKey.class, "privateKeySource");
     }
 }
