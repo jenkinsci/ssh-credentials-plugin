@@ -41,6 +41,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
 import jenkins.model.Jenkins;
 import jenkins.security.SlaveToMasterCallable;
 import net.jcip.annotations.GuardedBy;
@@ -115,10 +119,8 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      * @since 1.4
      */
     protected SSHAuthenticator(@NonNull C connection, @NonNull U user, @CheckForNull String username) {
-        connection.getClass(); // throw NPE if null
-        user.getClass(); // throw NPE if null
-        this.connection = connection;
-        this.user = user;
+        this.connection = Objects.requireNonNull(connection);
+        this.user = Objects.requireNonNull(user);
         this.username = username;
     }
 
@@ -188,8 +190,8 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
                                                                                                 @CheckForNull String
                                                                                                         username)
             throws InterruptedException, IOException {
-        connection.getClass(); // throw NPE if null
-        user.getClass(); // throw NPE if null
+        Objects.requireNonNull(connection);
+        Objects.requireNonNull(user);
         Collection<SSHAuthenticatorFactory> factories;
         try {
             factories = lookupFactories();
@@ -205,7 +207,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
             Channel channel = Channel.current();
             if (channel == null) {
                 // ok we are not running on a remote agent, we have no ability to authenticate
-                factories = Collections.<SSHAuthenticatorFactory>emptySet();
+                factories = Collections.emptySet();
             } else {
                 // call back to the master and get an instance
                 factories = channel.call(new NewInstance());
@@ -213,13 +215,12 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
 
         }
 
-        for (SSHAuthenticatorFactory factory : factories) {
-            SSHAuthenticator<C, U> result = factory.newInstance(connection, user, username);
-            if (result != null && result.canAuthenticate()) {
-                return result;
-            }
-        }
-        return new SSHNonauthenticator<C, U>(connection, user, username);
+        return factories.stream()
+                .map(factory -> factory.newInstance(connection, user, username))
+                .filter(Objects::nonNull)
+                .filter(SSHAuthenticator::canAuthenticate)
+                .findFirst()
+                .orElseGet(() -> new SSHNonauthenticator<>(connection, user, username));
     }
 
     /**
@@ -241,7 +242,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
     @Deprecated
     public static SSHAuthenticator<Object, StandardUsernameCredentials> newInstance(Object connection, SSHUser user)
             throws InterruptedException, IOException {
-        return newInstance(connection, (StandardUsernameCredentials) user, null);
+        return newInstance(connection, user, null);
     }
 
     /**
@@ -257,14 +258,10 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      */
     public static <C, U extends StandardUsernameCredentials> boolean isSupported(@NonNull Class<C> connectionClass,
                                                                                  @NonNull Class<U> userClass) {
-        connectionClass.getClass(); // throw NPE if null
-        userClass.getClass(); // throw NPE if null
-        for (SSHAuthenticatorFactory factory : ExtensionList.lookup(SSHAuthenticatorFactory.class)) {
-            if (factory.supports(connectionClass, userClass)) {
-                return true;
-            }
-        }
-        return false;
+        Objects.requireNonNull(connectionClass);
+        Objects.requireNonNull(userClass);
+        return ExtensionList.lookup(SSHAuthenticatorFactory.class).stream()
+                .anyMatch(factory -> factory.supports(connectionClass, userClass));
     }
 
     /**
@@ -279,14 +276,12 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      */
     public static List<? extends StandardUsernameCredentials> filter(Iterable<? extends Credentials> credentials,
                                                                      Class<?> connectionClass) {
-        List<StandardUsernameCredentials> result = new ArrayList<StandardUsernameCredentials>();
         CredentialsMatcher matcher = matcher(connectionClass);
-        for (Credentials credential : credentials) {
-            if (credential instanceof StandardUsernameCredentials && matcher.matches(credential)) {
-                result.add((StandardUsernameCredentials) credential);
-            }
-        }
-        return result;
+        return StreamSupport.stream(credentials.spliterator(), false)
+                .filter(StandardUsernameCredentials.class::isInstance)
+                .filter(matcher::matches)
+                .map(StandardUsernameCredentials.class::cast)
+                .collect(Collectors.toList());
     }
 
 
@@ -349,7 +344,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
          */
         public boolean matches(@NonNull Credentials item) {
             return item instanceof StandardUsernameCredentials && isSupported(connectionClass,
-                    (StandardUsernameCredentials.class.cast(item)).getClass());
+                    ((StandardUsernameCredentials) item).getClass());
         }
     }
 
@@ -435,7 +430,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
                 try {
                     authenticated = doAuthenticate();
                 } catch (Throwable t) {
-                    listener.error("SSH authentication failed").println(Functions.printThrowable(t).trim()); // TODO 2.43+ use Functions.printStackTrace
+                    Functions.printStackTrace(t, listener.error("SSH authentication failed"));
                     authenticated = false;
                 }
             }
@@ -492,7 +487,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      *
      * @since 0.2
      */
-    public static enum Mode {
+    public enum Mode {
         /**
          * This {@link SSHAuthenticator} performs authentication before establishing the connection.
          */
@@ -500,7 +495,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
         /**
          * This {@link SSHAuthenticator} performs authentication after establishing the connection.
          */
-        AFTER_CONNECT;
+        AFTER_CONNECT
     }
 
     /**
@@ -516,7 +511,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
          * {@inheritDoc}
          */
         public Collection<SSHAuthenticatorFactory> call() throws IOException {
-            return new ArrayList<SSHAuthenticatorFactory>(ExtensionList.lookup(SSHAuthenticatorFactory.class));
+            return new ArrayList<>(ExtensionList.lookup(SSHAuthenticatorFactory.class));
         }
     }
 
