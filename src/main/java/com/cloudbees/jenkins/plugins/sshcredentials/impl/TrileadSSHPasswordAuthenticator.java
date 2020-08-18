@@ -49,6 +49,8 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
      * Our logger
      */
     private static final Logger LOGGER = Logger.getLogger(TrileadSSHPasswordAuthenticator.class.getName());
+    private static final String PASSWORD = "password";
+    private static final String KEYBOARD_INTERACTIVE = "keyboard-interactive";
 
     /**
      * Constructor.
@@ -80,11 +82,11 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
     public boolean canAuthenticate() {
         try {
             for (String authMethod : getConnection().getRemainingAuthMethods(getUsername())) {
-                if ("password".equals(authMethod)) {
+                if (PASSWORD.equals(authMethod)) {
                     // prefer password
                     return true;
                 }
-                if ("keyboard-interactive".equals(authMethod)) {
+                if (KEYBOARD_INTERACTIVE.equals(authMethod)) {
                     return true;
                 }
             }
@@ -108,7 +110,7 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
             boolean tried = false;
 
             List<String> availableMethods = Arrays.asList(connection.getRemainingAuthMethods(username));
-            if (availableMethods.contains("password")) {
+            if (availableMethods.contains(PASSWORD)) {
                 // prefer password
                 if (connection.authenticateWithPassword(username, password)) {
                     LOGGER.fine("Authentication with 'password' succeeded.");
@@ -118,7 +120,7 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
                         username, user.getId());
                 tried = true;
             }
-            if (availableMethods.contains("keyboard-interactive")) {
+            if (availableMethods.contains(KEYBOARD_INTERACTIVE)) {
                 if (connection.authenticateWithKeyboardInteractive(username, new InteractiveCallback() {
                     public String[] replyToChallenge(String name, String instruction, int numPrompts,
                                                      String[] prompt, boolean[] echo)
