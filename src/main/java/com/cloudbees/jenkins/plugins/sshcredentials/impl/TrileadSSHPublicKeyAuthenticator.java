@@ -50,6 +50,7 @@ public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connectio
      * Our logger.
      */
     private static final Logger LOGGER = Logger.getLogger(TrileadSSHPublicKeyAuthenticator.class.getName());
+    private static final String PUBLICKEY = "publickey";
 
     /**
      * Constructor.
@@ -77,7 +78,7 @@ public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connectio
     @Override
     public boolean canAuthenticate() {
         try {
-            return getRemainingAuthMethods().contains("publickey");
+            return getRemainingAuthMethods().contains(PUBLICKEY);
         } catch (IOException e) {
             e.printStackTrace(getListener().error("Failed to authenticate"));
             return false;
@@ -101,7 +102,7 @@ public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connectio
             final String passphrase = userPassphrase == null ? null : userPassphrase.getPlainText();
 
             Collection<String> availableMethods = getRemainingAuthMethods();
-            if (availableMethods.contains("publickey")) {
+            if (availableMethods.contains(PUBLICKEY)) {
                 int count = 0;
                 List<IOException> ioe = new ArrayList<IOException>();
                 for (String privateKey : getPrivateKeys(user)) {

@@ -3,6 +3,7 @@ package com.cloudbees.jenkins.plugins.sshcredentials.jcasc;
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.BasicSSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import hudson.util.Secret;
 import io.jenkins.plugins.casc.misc.RoundTripAbstractTest;
 import jenkins.model.Jenkins;
 import org.jvnet.hudson.test.RestartableJenkinsRule;
@@ -11,6 +12,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class ExportImportRoundTripCasCSSHCredentialsTest extends RoundTripAbstractTest {
     @Override
@@ -27,7 +29,9 @@ public class ExportImportRoundTripCasCSSHCredentialsTest extends RoundTripAbstra
         BasicSSHUserPrivateKey cred2 = creds2.get(0);
         assertEquals("userid2", cred2.getId());
         assertEquals("username-of-userid2", cred2.getUsername());
-        assertEquals("passphrase-of-userid2", cred2.getPassphrase().getPlainText());
+        Secret passphrase = cred2.getPassphrase();
+        assertNotNull(passphrase);
+        assertEquals("passphrase-of-userid2", passphrase.getPlainText());
         assertEquals("the description of userid2", cred2.getDescription());
         assertEquals(1, cred2.getPrivateKeySource().getPrivateKeys().size());
         String directKey = cred2.getPrivateKeySource().getPrivateKeys().get(0);

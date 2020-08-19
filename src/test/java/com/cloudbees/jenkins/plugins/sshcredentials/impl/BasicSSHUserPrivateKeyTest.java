@@ -61,9 +61,9 @@ public class BasicSSHUserPrivateKeyTest {
 
     @LocalData
     @Test
-    public void readOldCredentials() throws Exception {
+    public void readOldCredentials() {
         SSHUserPrivateKey supk = CredentialsMatchers.firstOrNull(
-                CredentialsProvider.lookupCredentials(SSHUserPrivateKey.class, Hudson.getInstance(), ACL.SYSTEM,
+                CredentialsProvider.lookupCredentials(SSHUserPrivateKey.class, Hudson.get(), ACL.SYSTEM,
                         (List<DomainRequirement>)null),
                 CredentialsMatchers.withId(TESTKEY_ID));
         assertNotNull(supk);
@@ -77,8 +77,8 @@ public class BasicSSHUserPrivateKeyTest {
     }
 
     @Test
-    public void ensureDirectEntryHasTrailingNewline() throws Exception {
-        String key = (new BasicSSHUserPrivateKey.DirectEntryPrivateKeySource("test")).getPrivateKey().toString();
+    public void ensureDirectEntryHasTrailingNewline() {
+        String key = (new BasicSSHUserPrivateKey.DirectEntryPrivateKeySource("test")).getPrivateKey().getPlainText();
         assertEquals("test\n", key);
     }
 
