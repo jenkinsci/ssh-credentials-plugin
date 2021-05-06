@@ -70,7 +70,7 @@
   </scm>
 
   <properties>
-    <revision>1.18.3</revision>
+    <revision>1.19</revision>
     <changelist>-SNAPSHOT</changelist>
     <jenkins.version>2.282</jenkins.version>
     <java.level>8</java.level>
@@ -93,8 +93,8 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.190.x</artifactId>
-        <version>13</version>
+        <artifactId>bom-2.277.x</artifactId>
+        <version>29</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
@@ -117,6 +117,7 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>credentials</artifactId>
+      <version>2.4-rc955.ba505d7bdaa3</version> <!-- TODO https://github.com/jenkinsci/credentials-plugin/pull/205 -->
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.modules</groupId>
