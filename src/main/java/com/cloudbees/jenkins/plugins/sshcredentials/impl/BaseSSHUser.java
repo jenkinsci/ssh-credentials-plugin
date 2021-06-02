@@ -5,7 +5,9 @@ import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.DataBoundSetter;
 
 /**
  * @author stephenc
@@ -23,9 +25,19 @@ public class BaseSSHUser extends BaseStandardCredentials implements SSHUser, Sta
      */
     protected final String username;
 
+    @Nullable
+    private Boolean usernameSecret = false;
+
     public BaseSSHUser(CredentialsScope scope, String id, String username, String description) {
         super(scope, id, description);
         this.username = username;
+    }
+
+    protected Object readResolve() {
+        if (usernameSecret == null) {
+            usernameSecret = true;
+        }
+        return this;
     }
 
     /**
@@ -34,6 +46,16 @@ public class BaseSSHUser extends BaseStandardCredentials implements SSHUser, Sta
     @NonNull
     public String getUsername() {
         return StringUtils.isEmpty(username) ? System.getProperty("user.name") : username;
+    }
+
+    @Override
+    public boolean isUsernameSecret() {
+        return usernameSecret;
+    }
+
+    @DataBoundSetter
+    public void setUsernameSecret(boolean usernameSecret) {
+        this.usernameSecret = usernameSecret;
     }
 
 }

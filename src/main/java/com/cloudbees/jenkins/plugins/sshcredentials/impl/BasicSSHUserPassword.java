@@ -73,8 +73,11 @@ public class BasicSSHUserPassword extends BaseSSHUser implements SSHUserPassword
         return password;
     }
 
-    private Object readResolve() {
-        return new UsernamePasswordCredentialsImpl(getScope(), getId(), getDescription(), getUsername(), getPassword().getEncryptedValue());
+    @Override
+    protected Object readResolve() {
+        UsernamePasswordCredentialsImpl resolved = new UsernamePasswordCredentialsImpl(getScope(), getId(), getDescription(), getUsername(), getPassword().getEncryptedValue());
+        resolved.setUsernameSecret(true);
+        return resolved;
     }
 
     /**

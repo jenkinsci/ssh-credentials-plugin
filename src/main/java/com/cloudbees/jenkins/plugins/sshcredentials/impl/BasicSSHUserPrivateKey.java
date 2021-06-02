@@ -35,7 +35,6 @@ import hudson.model.Items;
 import hudson.util.Secret;
 import java.io.File;
 import java.io.IOException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -112,7 +111,8 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         return secret == null ? null : secret.getPlainText().isEmpty() ? null : secret;
     }
 
-    private synchronized Object readResolve() throws ObjectStreamException {
+    @Override
+    protected synchronized Object readResolve() {
         if (privateKeySource == null) {
             Secret passphrase = getPassphrase();
             if (privateKeys != null) {
@@ -144,7 +144,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                     getDescription()
             );
         }
-        return this;
+        return super.readResolve();
     }
 
     /**
