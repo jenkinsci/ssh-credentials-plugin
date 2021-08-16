@@ -89,6 +89,7 @@ public class JSchSSHPublicKeyAuthenticatorTest {
             @NonNull
             public CredentialsDescriptor getDescriptor() {
                 return new CredentialsDescriptor() {
+                    @NonNull
                     @Override
                     public String getDisplayName() {
                         return "";

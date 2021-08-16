@@ -104,7 +104,7 @@ public class TrileadSSHPublicKeyAuthenticator extends SSHAuthenticator<Connectio
             Collection<String> availableMethods = getRemainingAuthMethods();
             if (availableMethods.contains(PUBLICKEY)) {
                 int count = 0;
-                List<IOException> ioe = new ArrayList<IOException>();
+                List<IOException> ioe = new ArrayList<>();
                 for (String privateKey : getPrivateKeys(user)) {
                     try {
                         if (connection.authenticateWithPublicKey(username, privateKey.toCharArray(), passphrase)) {

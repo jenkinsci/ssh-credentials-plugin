@@ -189,7 +189,7 @@ public class TrileadSSHPasswordAuthenticatorTest {
 
     private static class NoVerifier implements ServerHostKeyVerifier {
         public boolean verifyServerHostKey(String hostname, int port, String serverHostKeyAlgorithm,
-                                           byte[] serverHostKey) throws Exception {
+                                           byte[] serverHostKey) {
             return true;
         }
     }

@@ -1,7 +1,6 @@
 package com.cloudbees.jenkins.plugins.sshcredentials;
 
 import com.cloudbees.plugins.credentials.CredentialsMatcher;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.AbstractIdCredentialsListBoxModel;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernameListBoxModel;
@@ -78,7 +77,7 @@ public class SSHUserListBoxModel extends AbstractIdCredentialsListBoxModel<SSHUs
      * @return {@code this} for method chaining.
      */
     public SSHUserListBoxModel withSystemScopeCredentials() {
-        return withSystemScopeCredentials(Collections.<DomainRequirement>emptyList());
+        return withSystemScopeCredentials(Collections.emptyList());
     }
 
     /**

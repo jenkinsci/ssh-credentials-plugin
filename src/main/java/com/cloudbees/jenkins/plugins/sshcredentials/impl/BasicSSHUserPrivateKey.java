@@ -208,6 +208,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         /**
          * {@inheritDoc}
          */
+        @NonNull
         @Override
         public String getDisplayName() {
             return Messages.BasicSSHUserPrivateKey_DisplayName();
@@ -357,6 +358,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             /**
              * {@inheritDoc}
              */
+            @NonNull
             @Override
             public String getDisplayName() {
                 return Messages.BasicSSHUserPrivateKey_DirectEntryPrivateKeySourceDisplayName();

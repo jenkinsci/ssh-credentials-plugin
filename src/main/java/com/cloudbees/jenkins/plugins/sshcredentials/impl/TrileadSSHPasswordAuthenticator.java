@@ -28,7 +28,6 @@ import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticatorFactory;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.trilead.ssh2.Connection;
-import com.trilead.ssh2.InteractiveCallback;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -121,17 +120,13 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
                 tried = true;
             }
             if (availableMethods.contains(KEYBOARD_INTERACTIVE)) {
-                if (connection.authenticateWithKeyboardInteractive(username, new InteractiveCallback() {
-                    public String[] replyToChallenge(String name, String instruction, int numPrompts,
-                                                     String[] prompt, boolean[] echo)
-                            throws Exception {
-                        // most SSH servers just use keyboard interactive to prompt for the password
-                        // match "assword" is safer than "password"... you don't *want* to know why!
-                        return prompt != null && prompt.length > 0 && prompt[0].toLowerCase(Locale.ENGLISH)
-                                .contains("assword")
-                                ? new String[]{password}
-                                : new String[0];
-                    }
+                if (connection.authenticateWithKeyboardInteractive(username, (name, instruction, numPrompts, prompt, echo) -> {
+                    // most SSH servers just use keyboard interactive to prompt for the password
+                    // match "assword" is safer than "password"... you don't *want* to know why!
+                    return prompt != null && prompt.length > 0 && prompt[0].toLowerCase(Locale.ENGLISH)
+                            .contains("assword")
+                            ? new String[]{password}
+                            : new String[0];
                 })) {
                     LOGGER.fine("Authentication with  'keyboard-interactive' succeeded.");
                     return true;

@@ -510,7 +510,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
         /**
          * {@inheritDoc}
          */
-        public Collection<SSHAuthenticatorFactory> call() throws IOException {
+        public Collection<SSHAuthenticatorFactory> call() {
             return new ArrayList<>(ExtensionList.lookup(SSHAuthenticatorFactory.class));
         }
     }
