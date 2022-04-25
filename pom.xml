@@ -34,7 +34,7 @@
   </parent>
 
   <artifactId>ssh-credentials</artifactId>
-  <version>${revision}${changelist}</version>
+  <version>${changelist}</version>
   <packaging>hpi</packaging>
 
   <name>SSH Credentials Plugin</name>
@@ -70,8 +70,7 @@
   </scm>
 
   <properties>
-    <revision>1.20</revision>
-    <changelist>-SNAPSHOT</changelist>
+    <changelist>999999-SNAPSHOT</changelist>
     <jenkins.version>2.289.3</jenkins.version>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
   </properties>
