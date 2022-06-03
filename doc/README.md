@@ -8,7 +8,7 @@ This plugin allows you to store SSH credentials in Jenkins. For more information
 
 Get the authenticator after you have opened the [ClientSession](https://javadoc.io/static/org.apache.sshd/sshd-core/2.8.0/org/apache/sshd/client/session/ClientSession.html) and let it handle authentication for you:
 
-```
+```java
 StandardUsernameCredentials user = ...
 SshClient client = SshClient.setUpDefaultClient();
 client.start();
