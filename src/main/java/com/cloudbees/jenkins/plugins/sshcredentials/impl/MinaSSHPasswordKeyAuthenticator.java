@@ -58,7 +58,7 @@ public class MinaSSHPasswordKeyAuthenticator extends SSHAuthenticator<ClientSess
      * @deprecated
      */
     @Deprecated
-    public MinaSSHPasswordKeyAuthenticator(ClientSession connection, StandardUsernamePasswordCredentials user) {
+    MinaSSHPasswordKeyAuthenticator(ClientSession connection, StandardUsernamePasswordCredentials user) {
         this(connection, user, null);
     }
 
@@ -68,7 +68,7 @@ public class MinaSSHPasswordKeyAuthenticator extends SSHAuthenticator<ClientSess
      * @param connection the connection we will be authenticating.
      * @since 1.4
      */
-    public MinaSSHPasswordKeyAuthenticator(@NonNull ClientSession connection,
+    MinaSSHPasswordKeyAuthenticator(@NonNull ClientSession connection,
                                            @NonNull StandardUsernamePasswordCredentials user,
                                            @CheckForNull String username) {
         super(connection, user, username);

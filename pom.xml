@@ -118,6 +118,7 @@
       <groupId>org.apache.sshd</groupId>
       <artifactId>sshd-core</artifactId>
       <version>${sshd-mina.version}</version>
+      <optional>true</optional>
       <exclusions>
         <!-- Provided by Jenkins core -->
         <exclusion>

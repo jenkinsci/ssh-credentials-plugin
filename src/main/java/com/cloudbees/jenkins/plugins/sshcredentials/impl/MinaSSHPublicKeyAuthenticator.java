@@ -66,7 +66,7 @@ public class MinaSSHPublicKeyAuthenticator extends SSHAuthenticator<ClientSessio
      *
      * @param connection the connection we will be authenticating.
      */
-    public MinaSSHPublicKeyAuthenticator(@NonNull ClientSession connection,
+    MinaSSHPublicKeyAuthenticator(@NonNull ClientSession connection,
                                          @NonNull SSHUserPrivateKey user) {
         super(connection, user, null);
     }
@@ -76,7 +76,7 @@ public class MinaSSHPublicKeyAuthenticator extends SSHAuthenticator<ClientSessio
      *
      * @param connection the connection we will be authenticating.
      */
-    public MinaSSHPublicKeyAuthenticator(@NonNull ClientSession connection,
+    MinaSSHPublicKeyAuthenticator(@NonNull ClientSession connection,
                                          @NonNull SSHUserPrivateKey user,
                                          @CheckForNull String username) {
         super(connection, user, username);
