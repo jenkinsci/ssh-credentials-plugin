@@ -25,6 +25,8 @@ package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.CredentialsSnapshotTaker;
+
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
@@ -530,5 +532,33 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
     static {
         // the critical field allow the permission check to make the XML read to fail completely in case of violation
         Items.XSTREAM2.addCriticalField(BasicSSHUserPrivateKey.class, "privateKeySource");
+    }
+
+    @Extension
+    public static class CredentialsSnapshotTakerImpl extends CredentialsSnapshotTaker<SSHUserPrivateKey> {
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Class<SSHUserPrivateKey> type() {
+            return SSHUserPrivateKey.class;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public SSHUserPrivateKey snapshot(SSHUserPrivateKey credentials) {
+            if (credentials instanceof BasicSSHUserPrivateKey) {
+                final PrivateKeySource keySource = ((BasicSSHUserPrivateKey) credentials).getPrivateKeySource();
+                if (keySource.isSnapshotSource()) {
+                    return credentials;
+                }
+            }
+            final Secret passphrase = credentials.getPassphrase();
+            return new BasicSSHUserPrivateKey(credentials.getScope(), credentials.getId(), credentials.getUsername(),
+                    new DirectEntryPrivateKeySource(credentials.getPrivateKeys()),
+                    passphrase == null ? null : passphrase.getEncryptedValue(), credentials.getDescription());
+        }
     }
 }
