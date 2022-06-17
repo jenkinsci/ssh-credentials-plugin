@@ -534,31 +534,4 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         Items.XSTREAM2.addCriticalField(BasicSSHUserPrivateKey.class, "privateKeySource");
     }
 
-    @Extension
-    public static class CredentialsSnapshotTakerImpl extends CredentialsSnapshotTaker<SSHUserPrivateKey> {
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Class<SSHUserPrivateKey> type() {
-            return SSHUserPrivateKey.class;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public SSHUserPrivateKey snapshot(SSHUserPrivateKey credentials) {
-            if (credentials instanceof BasicSSHUserPrivateKey) {
-                final PrivateKeySource keySource = ((BasicSSHUserPrivateKey) credentials).getPrivateKeySource();
-                if (keySource.isSnapshotSource()) {
-                    return credentials;
-                }
-            }
-            final Secret passphrase = credentials.getPassphrase();
-            return new BasicSSHUserPrivateKey(credentials.getScope(), credentials.getId(), credentials.getUsername(),
-                    new DirectEntryPrivateKeySource(credentials.getPrivateKeys()),
-                    passphrase == null ? null : passphrase.getEncryptedValue(), credentials.getDescription());
-        }
-    }
 }
