@@ -31,12 +31,12 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
+import hudson.Functions;
 import org.apache.sshd.client.auth.password.UserAuthPasswordFactory;
 import org.apache.sshd.client.session.ClientSession;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -100,7 +100,7 @@ public class MinaSSHPasswordKeyAuthenticator extends SSHAuthenticator<ClientSess
             getConnection().setUsername(username);
             return getConnection().auth().verify(authTimeout, TimeUnit.SECONDS).isSuccess();
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Could not authenticate due to I/O issue", e);
+            Functions.printStackTrace(e, getListener().error("Could not authenticate due to I/O issue"));
         }
         return false;
     }

@@ -31,6 +31,7 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
+import hudson.Functions;
 import hudson.util.Secret;
 import org.apache.sshd.client.auth.pubkey.UserAuthPublicKeyFactory;
 import org.apache.sshd.client.session.ClientSession;
@@ -45,7 +46,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -116,9 +116,9 @@ public class MinaSSHPublicKeyAuthenticator extends SSHAuthenticator<ClientSessio
                 getConnection().setUsername(getUsername());
                 return getConnection().auth().verify(authTimeout, TimeUnit.SECONDS).isSuccess();
             } catch (IOException e) {
-                LOGGER.log(Level.WARNING, "Could not authenticate due to I/O issue", e);
+                Functions.printStackTrace(e, getListener().error("Could not authenticate due to I/O issue"));
             } catch (GeneralSecurityException e) {
-                LOGGER.log(Level.WARNING, "Could not authenticate because unrecoverable key pair", e);
+                Functions.printStackTrace(e, getListener().error("Could not authenticate because unrecoverable key pair"));
             }
         }
         return false;
