@@ -25,8 +25,6 @@ package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.CredentialsScope;
-import com.cloudbees.plugins.credentials.CredentialsSnapshotTaker;
-
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
@@ -533,5 +531,4 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         // the critical field allow the permission check to make the XML read to fail completely in case of violation
         Items.XSTREAM2.addCriticalField(BasicSSHUserPrivateKey.class, "privateKeySource");
     }
-
 }
