@@ -45,7 +45,7 @@ Fix security issue when Credentials Binding 1.13 or newer is installed
 
 [JENKINS-40003](https://issues.jenkins-ci.org/browse/JENKINS-40003) Add description to POM
 
-[JENKINS-39836](https://issues.jenkins-ci.org/browse/JENKINS-39836) InvalidClassException for SSHAuthenticator$1 when doing a git clone on an Linux Z series, Linux P series, and Linux P LE series slaves
+[JENKINS-39836](https://issues.jenkins-ci.org/browse/JENKINS-39836) InvalidClassException for SSHAuthenticator$1 when doing a git clone on an Linux Z series, Linux P series, and Linux P LE series agents
 
 ## Version 1.12 (May 11, 2016)
 
@@ -59,7 +59,7 @@ Fix NPE in BasicSSHUserPrivateKey when the user has not configured a private key
 
 ## Version 1.10 (Oct 17, 2014)
 
-Code to let slaves load private keys from files on the master did not work as intended.
+Code to let agents load private keys from files on the controller did not work as intended.
 
 Deprecating SSHUserListBoxModel.
 
