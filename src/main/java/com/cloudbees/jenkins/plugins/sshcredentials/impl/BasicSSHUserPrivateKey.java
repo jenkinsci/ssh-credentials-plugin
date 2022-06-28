@@ -221,35 +221,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          * {@inheritDoc}
          */
         public String getIconClassName() {
-            return "icon-ssh-credentials-ssh-key";
-        }
-
-        static {
-            for (String name : new String[]{
-                    "ssh-key"
-            }) {
-                IconSet.icons.addIcon(new Icon(
-                        String.format("icon-ssh-credentials-%s icon-sm", name),
-                        String.format("ssh-credentials/images/%s.svg", name),
-                        Icon.ICON_SMALL_STYLE, IconType.PLUGIN)
-                );
-                IconSet.icons.addIcon(new Icon(
-                        String.format("icon-ssh-credentials-%s icon-md", name),
-                        String.format("ssh-credentials/images/%s.svg", name),
-                        Icon.ICON_MEDIUM_STYLE, IconType.PLUGIN)
-                );
-                IconSet.icons.addIcon(new Icon(
-                        String.format("icon-ssh-credentials-%s icon-lg", name),
-                        String.format("ssh-credentials/images/%s.svg", name),
-                        Icon.ICON_LARGE_STYLE, IconType.PLUGIN)
-                );
-                IconSet.icons.addIcon(new Icon(
-                        String.format("icon-ssh-credentials-%s icon-xlg", name),
-                        String.format("ssh-credentials/images/%s.svg", name),
-                        Icon.ICON_XLARGE_STYLE, IconType.PLUGIN)
-                );
-            }
-
+            return "symbol-fingerprint";
         }
     }
 
