@@ -221,7 +221,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          * {@inheritDoc}
          */
         public String getIconClassName() {
-            return "icon-fingerprint";
+            return "symbol-fingerprint";
         }
     }
 
