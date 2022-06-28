@@ -196,7 +196,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
         try {
             factories = lookupFactories();
         } catch (LinkageError e) {
-            // we are probably running on a remote agent and master only classes are banned from remote class loading
+            // we are probably running on a remote agent and controller only classes are banned from remote class loading
             factories = null;
         } catch (IllegalStateException e) {
             // Jenkins.getInstance() is throwing an IllegalStateException when invoked on a remote agent
@@ -209,7 +209,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
                 // ok we are not running on a remote agent, we have no ability to authenticate
                 factories = Collections.emptySet();
             } else {
-                // call back to the master and get an instance
+                // call back to the controller and get an instance
                 factories = channel.call(new NewInstance());
             }
 
