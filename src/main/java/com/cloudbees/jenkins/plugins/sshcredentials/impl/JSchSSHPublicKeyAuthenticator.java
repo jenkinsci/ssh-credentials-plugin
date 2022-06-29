@@ -1,7 +1,6 @@
 package com.cloudbees.jenkins.plugins.sshcredentials.impl;
 
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticator;
-import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticatorException;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHAuthenticatorFactory;
 import com.cloudbees.jenkins.plugins.sshcredentials.SSHUserPrivateKey;
 import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
@@ -12,7 +11,7 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.util.Secret;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Logger;
 
 /**
@@ -64,9 +63,9 @@ public class JSchSSHPublicKeyAuthenticator extends SSHAuthenticator<JSchConnecto
             final SSHUserPrivateKey user = getUser();
             final Secret userPassphrase = user.getPassphrase();
             final String passphrase = userPassphrase == null ? null : userPassphrase.getPlainText();
-            byte[] passphraseBytes = passphrase == null ? null : passphrase.getBytes("UTF-8");
+            byte[] passphraseBytes = passphrase == null ? null : passphrase.getBytes(StandardCharsets.UTF_8);
             for (String privateKey : getPrivateKeys(user)) {
-                getConnection().getJSch().addIdentity(getUsername(), privateKey.getBytes("UTF-8"), null,
+                getConnection().getJSch().addIdentity(getUsername(), privateKey.getBytes(StandardCharsets.UTF_8), null,
                         passphraseBytes);
             }
 
@@ -74,8 +73,6 @@ public class JSchSSHPublicKeyAuthenticator extends SSHAuthenticator<JSchConnecto
         } catch (JSchException e) {
             e.printStackTrace(getListener().error("Failed to authenticate with public key"));
             return false;
-        } catch (UnsupportedEncodingException e) {
-            throw new SSHAuthenticatorException(e);
         }
     }
 

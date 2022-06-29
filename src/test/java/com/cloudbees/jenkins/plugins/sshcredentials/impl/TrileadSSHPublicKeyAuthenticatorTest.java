@@ -79,6 +79,7 @@ public class TrileadSSHPublicKeyAuthenticatorTest {
                 return "";
             }
 
+            @NonNull
             public String getId() {
                 return "";
             }
@@ -90,6 +91,7 @@ public class TrileadSSHPublicKeyAuthenticatorTest {
             @NonNull
             public CredentialsDescriptor getDescriptor() {
                 return new CredentialsDescriptor() {
+                    @NonNull
                     @Override
                     public String getDisplayName() {
                         return "";
