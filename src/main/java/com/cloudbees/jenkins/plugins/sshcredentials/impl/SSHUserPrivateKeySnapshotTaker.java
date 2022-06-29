@@ -22,7 +22,7 @@ public class SSHUserPrivateKeySnapshotTaker extends CredentialsSnapshotTaker<SSH
      */
     @Override
     public SSHUserPrivateKey snapshot(SSHUserPrivateKey credentials) {
-        if (credentials instanceof BasicSSHUserPrivateKey) {
+        if (credentials instanceof BasicSSHUserPrivateKey && ((BasicSSHUserPrivateKey) credentials).getPrivateKeySource() instanceof DirectEntryPrivateKeySource) {
             return credentials;
         }
         final Secret passphrase = credentials.getPassphrase();
