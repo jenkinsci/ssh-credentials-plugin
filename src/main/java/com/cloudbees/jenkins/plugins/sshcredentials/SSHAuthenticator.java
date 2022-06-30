@@ -30,26 +30,28 @@ import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.ExtensionList;
+import hudson.Functions;
 import hudson.model.BuildListener;
-import hudson.model.Hudson;
 import hudson.model.TaskListener;
 import hudson.remoting.Channel;
 import hudson.util.StreamTaskListener;
-import jenkins.model.Jenkins;
-import jenkins.security.MasterToSlaveCallable;
-import net.jcip.annotations.GuardedBy;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import jenkins.model.Jenkins;
+import jenkins.security.SlaveToMasterCallable;
+import net.jcip.annotations.GuardedBy;
 
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.anyOf;
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
+import jenkins.util.JenkinsJVM;
 
 /**
  * Abstraction for something that can authenticate an SSH connection.
@@ -100,7 +102,8 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      *
      * @param connection the connection we will be authenticating.
      * @param user       the user we will be authenticating as.
-     * @deprecated use {@link #SSHAuthenticator(Object, com.cloudbees.plugins.credentials.common.StandardUsernameCredentials, String)}
+     * @deprecated use
+     * {@link #SSHAuthenticator(Object, com.cloudbees.plugins.credentials.common.StandardUsernameCredentials, String)}
      */
     @Deprecated
     protected SSHAuthenticator(@NonNull C connection, @NonNull U user) {
@@ -116,10 +119,8 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      * @since 1.4
      */
     protected SSHAuthenticator(@NonNull C connection, @NonNull U user, @CheckForNull String username) {
-        connection.getClass(); // throw NPE if null
-        user.getClass(); // throw NPE if null
-        this.connection = connection;
-        this.user = user;
+        this.connection = Objects.requireNonNull(connection);
+        this.user = Objects.requireNonNull(user);
         this.username = username;
     }
 
@@ -183,42 +184,56 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      * @return a {@link SSHAuthenticator} that may or may not be able to successfully authenticate.
      * @since 1.4
      */
-    @SuppressFBWarnings(value="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification="https://github.com/jenkinsci/jenkins/pull/2094")
     @NonNull
     public static <C, U extends StandardUsernameCredentials> SSHAuthenticator<C, U> newInstance(@NonNull C connection,
                                                                                                 @NonNull U user,
                                                                                                 @CheckForNull String
                                                                                                         username)
             throws InterruptedException, IOException {
-        connection.getClass(); // throw NPE if null
-        user.getClass(); // throw NPE if null
+        Objects.requireNonNull(connection);
+        Objects.requireNonNull(user);
         Collection<SSHAuthenticatorFactory> factories;
-        if (Jenkins.getInstance() != null) {
-            // if running on the master
-            factories = Jenkins.getInstance().getExtensionList(SSHAuthenticatorFactory.class);
-        } else {
-            // if running on the slave, bring these factories over here
-            factories = Channel.current().call(new MasterToSlaveCallable<Collection<SSHAuthenticatorFactory>, IOException>() {
-                @SuppressFBWarnings(value="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification="https://github.com/jenkinsci/jenkins/pull/2094")
-                public Collection<SSHAuthenticatorFactory> call() throws IOException {
-                    return new ArrayList<SSHAuthenticatorFactory>(
-                            Jenkins.getInstance().getExtensionList(SSHAuthenticatorFactory.class));
-                }
-            });
+        try {
+            factories = lookupFactories();
+        } catch (LinkageError e) {
+            // we are probably running on a remote agent and controller only classes are banned from remote class loading
+            factories = null;
+        } catch (IllegalStateException e) {
+            // Jenkins.getInstance() is throwing an IllegalStateException when invoked on a remote agent
+            factories = null;
+        }
+        if (factories == null) {
+            // we are probably running on a remote agent
+            Channel channel = Channel.current();
+            if (channel == null) {
+                // ok we are not running on a remote agent, we have no ability to authenticate
+                factories = Collections.emptySet();
+            } else {
+                // call back to the controller and get an instance
+                factories = channel.call(new NewInstance());
+            }
+
         }
 
-        for (SSHAuthenticatorFactory factory : factories) {
-            SSHAuthenticator<C, U> result = factory.newInstance(connection, user, username);
-            if (result != null && result.canAuthenticate()) {
-                return result;
-            }
-        }
-        return new SSHAuthenticator<C, U>(connection, user, username) {
-            @Override
-            protected boolean doAuthenticate() {
-                return false;
-            }
-        };
+        return factories.stream()
+                .map(factory -> factory.newInstance(connection, user, username))
+                .filter(Objects::nonNull)
+                .filter(SSHAuthenticator::canAuthenticate)
+                .findFirst()
+                .orElseGet(() -> new SSHNonauthenticator<>(connection, user, username));
+    }
+
+    /**
+     * This method allows a build agent to invoke {@link #newInstance(Object, StandardUsernameCredentials, String)}
+     * after we start blocking build agents from loading master-only classes such as {@link Jenkins} and
+     * {@link ExtensionList} as the JVM will not attempt to load these classes until this method gets invoked.
+     *
+     * @return the {@link SSHAuthenticatorFactory} instances (or {@code null} if you invoke from a build agent)
+     * @throws LinkageError          if you invoke from a build agent
+     * @throws IllegalStateException if you invoke from a build agent
+     */
+    private static List<SSHAuthenticatorFactory> lookupFactories() {
+        return JenkinsJVM.isJenkinsJVM() ? ExtensionList.lookup(SSHAuthenticatorFactory.class) : null;
     }
 
     /**
@@ -227,7 +242,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
     @Deprecated
     public static SSHAuthenticator<Object, StandardUsernameCredentials> newInstance(Object connection, SSHUser user)
             throws InterruptedException, IOException {
-        return newInstance(connection, (StandardUsernameCredentials) user, null);
+        return newInstance(connection, user, null);
     }
 
     /**
@@ -239,18 +254,14 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      * @param <C>             the type of connection.
      * @param <U>             the type of user.
      * @return {@code true} if and only if the supplied connection class and user class are supported by at least one
-     *         factory.
+     * factory.
      */
     public static <C, U extends StandardUsernameCredentials> boolean isSupported(@NonNull Class<C> connectionClass,
                                                                                  @NonNull Class<U> userClass) {
-        connectionClass.getClass(); // throw NPE if null
-        userClass.getClass(); // throw NPE if null
-        for (SSHAuthenticatorFactory factory : Hudson.getInstance().getExtensionList(SSHAuthenticatorFactory.class)) {
-            if (factory.supports(connectionClass, userClass)) {
-                return true;
-            }
-        }
-        return false;
+        Objects.requireNonNull(connectionClass);
+        Objects.requireNonNull(userClass);
+        return ExtensionList.lookup(SSHAuthenticatorFactory.class).stream()
+                .anyMatch(factory -> factory.supports(connectionClass, userClass));
     }
 
     /**
@@ -260,19 +271,17 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      * @param connectionClass the type of connection to filter for.
      * @return a list of {@link SSHUser} credentials appropriate for use with the supplied type of connection.
      * @deprecated Use
-     *             {@link CredentialsMatchers#filter(List, CredentialsMatcher)}
-     *             and {@link #matcher(Class)}
+     * {@link CredentialsMatchers#filter(List, CredentialsMatcher)}
+     * and {@link #matcher(Class)}
      */
     public static List<? extends StandardUsernameCredentials> filter(Iterable<? extends Credentials> credentials,
                                                                      Class<?> connectionClass) {
-        List<StandardUsernameCredentials> result = new ArrayList<StandardUsernameCredentials>();
         CredentialsMatcher matcher = matcher(connectionClass);
-        for (Credentials credential : credentials) {
-            if (credential instanceof StandardUsernameCredentials && matcher.matches(credential)) {
-                result.add((StandardUsernameCredentials) credential);
-            }
-        }
-        return result;
+        return StreamSupport.stream(credentials.spliterator(), false)
+                .filter(StandardUsernameCredentials.class::isInstance)
+                .filter(matcher::matches)
+                .map(StandardUsernameCredentials.class::cast)
+                .collect(Collectors.toList());
     }
 
 
@@ -282,7 +291,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      * When you know the connection type you will be using, it is better to use {@link #matcher(Class)}.
      *
      * @return a {@link CredentialsMatcher} that matches the generic types of credential that are valid for use over
-     *         SSH.
+     * SSH.
      */
     public static CredentialsMatcher matcher() {
         return anyOf(
@@ -308,6 +317,13 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      * @since 0.5
      */
     private static class Matcher implements CredentialsMatcher {
+        /**
+         * Standardize serialization across different JVMs.
+         *
+         * @since 1.13
+         */
+        // historical value generated from 1.12 code with Java 8
+	private static final Long serialVersionUID = -5078593817273453864L; 
 
         /**
          * The connection class.
@@ -328,7 +344,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
          */
         public boolean matches(@NonNull Credentials item) {
             return item instanceof StandardUsernameCredentials && isSupported(connectionClass,
-                    (StandardUsernameCredentials.class.cast(item)).getClass());
+                    ((StandardUsernameCredentials) item).getClass());
         }
     }
 
@@ -341,7 +357,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      * </p>
      *
      * @return {@code true} if the bound connection is in a state where authentication can be tried using the
-     *         supplied credentials.
+     * supplied credentials.
      */
     public boolean canAuthenticate() {
         synchronized (lock) {
@@ -406,7 +422,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
 
     /**
      * @deprecated as of 0.3
-     *             Use {@link #authenticate(TaskListener)} and provide a listener to receive errors.
+     * Use {@link #authenticate(TaskListener)} and provide a listener to receive errors.
      */
     public final boolean authenticate() {
         synchronized (lock) {
@@ -414,8 +430,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
                 try {
                     authenticated = doAuthenticate();
                 } catch (Throwable t) {
-                    Logger.getLogger(getClass().getName())
-                            .log(Level.WARNING, "Uncaught exception escaped doAuthenticate method", t);
+                    Functions.printStackTrace(t, listener.error("SSH authentication failed"));
                     authenticated = false;
                 }
             }
@@ -424,11 +439,29 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
     }
 
     /**
+     * @since TODO
+     * @throws IOException Failure reason
+     */
+    public final void authenticateOrFail() throws IOException {
+        synchronized (lock) {
+            if (!canAuthenticate()) {
+                throw new IOException("Cannot authenticate");
+            }
+
+            try {
+                authenticated = doAuthenticate();
+            } catch (Throwable t) {
+                throw  new IOException("SSH authentication failed", t);
+            }
+        }
+    }
+
+    /**
      * Authenticate the bound connection using the supplied credentials.
      *
      * @return For an {@link #getAuthenticationMode()} of {@link Mode#BEFORE_CONNECT} the return value is
-     *         always {@code true} otherwise the return value is {@code true} if and only if authentication was
-     *         successful.
+     * always {@code true} otherwise the return value is {@code true} if and only if authentication was
+     * successful.
      */
     public final boolean authenticate(TaskListener listener) {
         setListener(listener);
@@ -454,7 +487,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
      *
      * @since 0.2
      */
-    public static enum Mode {
+    public enum Mode {
         /**
          * This {@link SSHAuthenticator} performs authentication before establishing the connection.
          */
@@ -462,6 +495,46 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
         /**
          * This {@link SSHAuthenticator} performs authentication after establishing the connection.
          */
-        AFTER_CONNECT;
+        AFTER_CONNECT
+    }
+
+    /**
+     * A callable invoked from the remote agents to retrieve the {@link SSHAuthenticatorFactory} instances.
+     */
+    private static class NewInstance extends SlaveToMasterCallable<Collection<SSHAuthenticatorFactory>, IOException> {
+        /**
+         * Standardize serialization.
+         */
+        private static final long serialVersionUID = 1L;
+
+        /**
+         * {@inheritDoc}
+         */
+        public Collection<SSHAuthenticatorFactory> call() {
+            return new ArrayList<>(ExtensionList.lookup(SSHAuthenticatorFactory.class));
+        }
+    }
+
+    /**
+     * A dummy {@link SSHAuthenticator} that will never authenticate.
+     *
+     * @param <C> the connection type.
+     * @param <U> the credential type.
+     */
+    private static class SSHNonauthenticator<C, U extends StandardUsernameCredentials> extends SSHAuthenticator<C, U> {
+        /**
+         * {@inheritDoc}
+         */
+        public SSHNonauthenticator(C connection, U user, String username) {
+            super(connection, user, username);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected boolean doAuthenticate() {
+            return false;
+        }
     }
 }
