@@ -118,9 +118,8 @@
       <artifactId>credentials</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.jenkins-ci.modules</groupId>
-      <artifactId>sshd</artifactId>
-      <version>3.0.3</version>
+      <groupId>io.jenkins.plugins.mina-sshd-api</groupId>
+      <artifactId>mina-sshd-api-core</artifactId>
       <scope>test</scope>
     </dependency>
     <!-- test dependencies -->
