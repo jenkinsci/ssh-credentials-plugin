@@ -29,7 +29,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>4.41</version>
+    <version>4.43.1</version>
     <relativePath />
   </parent>
 
@@ -93,7 +93,7 @@
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
         <artifactId>bom-2.346.x</artifactId>
-        <version>1461.vb_3c6de28f2b_a_</version>
+        <version>1508.v4b_d09ff0e893</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
@@ -111,9 +111,8 @@
       <artifactId>credentials</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.jenkins-ci.modules</groupId>
-      <artifactId>sshd</artifactId>
-      <version>3.0.3</version>
+      <groupId>io.jenkins.plugins.mina-sshd-api</groupId>
+      <artifactId>mina-sshd-api-core</artifactId>
       <scope>test</scope>
     </dependency>
     <!-- test dependencies -->
