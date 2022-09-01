@@ -101,13 +101,6 @@
   </dependencyManagement>
 
   <dependencies>
-    <!-- regular dependencies -->
-    <dependency>
-      <groupId>com.jcraft</groupId>
-      <artifactId>jsch</artifactId>
-      <version>0.1.55</version>
-      <optional>true</optional>
-    </dependency>
     <!-- plugin dependencies -->
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
