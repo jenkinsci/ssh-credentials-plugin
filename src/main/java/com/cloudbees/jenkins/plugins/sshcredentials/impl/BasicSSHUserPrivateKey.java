@@ -147,15 +147,6 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         return super.readResolve();
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @NonNull
-    public String getPrivateKey() {
-        List<String> privateKeys = getPrivateKeys();
-        return privateKeys.isEmpty() ? "" : privateKeys.get(0);
-    }
-
     @NonNull
     public synchronized List<String> getPrivateKeys() {
         if (privateKeySource == null) {

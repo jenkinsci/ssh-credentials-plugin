@@ -41,7 +41,10 @@ public interface SSHUserPrivateKey extends SSHUser {
      */
     @Deprecated
     @NonNull
-    String getPrivateKey();
+    default String getPrivateKey() {
+        List<String> keys = getPrivateKeys();
+        return keys.isEmpty() ? "" : keys.get(0);
+    }
 
     /**
      * Gets the passphrase for the private keys or {@code null} if the private keys are not protected by a

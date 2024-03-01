@@ -99,11 +99,16 @@ public class TrileadSSHPublicKeyAuthenticatorTest {
                 };
             }
 
+            @CheckForNull
+            public Secret getPassphrase() {
+                return null;
+            }
+
             @NonNull
-            public String getPrivateKey() {
+            public List<String> getPrivateKeys() {
                 // just want a valid key... I generated this and have thrown it away (other than here)
                 // do not use other than in this test
-                return "-----BEGIN RSA PRIVATE KEY-----\n"
+                return List.of("-----BEGIN RSA PRIVATE KEY-----\n"
                         + "MIICWQIBAAKBgQDADDwooNPJNQB4N4bJPiBgq/rkWKMABApX0w4trSkkX5q+l+CL\n"
                         + "CuddGGAsAu6XPari8v49ipbBmHqRLP9+X3ARGWKU2gDvGTBr99/ReUl2YgVjCwy+\n"
                         + "KMrGCN7SNTgRo6StwVaPhh6pUpNTQciDe/kOwUnQFWSM6/lwkOD1Uod45wIBIwKB\n"
@@ -117,17 +122,7 @@ public class TrileadSSHPublicKeyAuthenticatorTest {
                         + "VLWIrDJsTTveLCaBFhNt3cMHA45ysnGiF1GzD+5mdzAdITBP9qvAjIgLQjjlRrH4\n"
                         + "w8eXsXQXjJgyjR0CQHfvhiMPG5pWwmXpsEOFo6GKSvOC/5sNEcnddenuO/2T7WWi\n"
                         + "o1LQh9naeuX8gti0vNR8+KtMEaIcJJeWnk56AVY=\n"
-                        + "-----END RSA PRIVATE KEY-----\n";
-            }
-
-            @CheckForNull
-            public Secret getPassphrase() {
-                return null;
-            }
-
-            @NonNull
-            public List<String> getPrivateKeys() {
-                return Collections.singletonList(getPrivateKey());
+                        + "-----END RSA PRIVATE KEY-----\n");
             }
         };
     }
