@@ -31,7 +31,7 @@ import com.trilead.ssh2.Connection;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import hudson.Extension;
+import org.jenkinsci.plugins.variant.OptionalExtension;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -153,7 +153,7 @@ public class TrileadSSHPasswordAuthenticator extends SSHAuthenticator<Connection
     /**
      * {@inheritDoc}
      */
-    @Extension
+    @OptionalExtension(requirePlugins = {"trilead-api"})
     public static class Factory extends SSHAuthenticatorFactory {
 
         /**
