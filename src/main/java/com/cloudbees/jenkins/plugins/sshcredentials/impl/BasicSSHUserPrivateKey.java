@@ -37,7 +37,6 @@ import hudson.util.Secret;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,7 +49,6 @@ import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.kohsuke.putty.PuTTYKey;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
