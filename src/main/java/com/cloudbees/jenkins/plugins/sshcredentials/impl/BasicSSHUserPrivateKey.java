@@ -29,6 +29,7 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
+import hudson.ExtensionList;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Items;
@@ -49,9 +50,6 @@ import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.jenkins.ui.icon.Icon;
-import org.jenkins.ui.icon.IconSet;
-import org.jenkins.ui.icon.IconType;
 import org.kohsuke.putty.PuTTYKey;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -157,16 +155,18 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             List<String> privateKeys = new ArrayList<>();
             for (String privateKey : privateKeySource.getPrivateKeys()) {
                 try {
-                    if (PuTTYKey.isPuTTYKeyFile(new StringReader(privateKey))) {
-                        // strictly we should be encrypting the openssh version with the passphrase, but
-                        // if the key we pass back does not have a passphrase, then the passphrase will not be
-                        // checked, so not an issue.
-                        privateKeys.add(new PuTTYKey(new StringReader(privateKey),
-                                passphrase == null ? "" : passphrase.getPlainText())
-                                .toOpenSSH());
-                    } else {
-                        privateKeys.add(privateKey.endsWith("\n") ? privateKey : privateKey + "\n");
+                    boolean accepted = false;
+                    for (PrivateKeyReader reader : ExtensionList.lookup(PrivateKeyReader.class)) {
+                        if(reader.accept(privateKey)) {
+                            privateKeys.add(reader.toOpenSSH(privateKey, passphrase));
+                            accepted = true;
+                        }
                     }
+                    if (accepted){
+                        continue;
+                    }
+                    privateKeys.add(privateKey.endsWith("\n") ? privateKey : privateKey + "\n");
+
                 } catch (IOException e) {
                     // ignore
                 }

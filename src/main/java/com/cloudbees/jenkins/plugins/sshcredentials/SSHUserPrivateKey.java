@@ -27,6 +27,7 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.util.Secret;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -65,5 +66,25 @@ public interface SSHUserPrivateKey extends SSHUser {
      */
     @NonNull
     List<String> getPrivateKeys();
+
+    /**
+     * Some key can be stored in another format such PuttyKey.
+     * we do expect other format than Putty but how knows...
+     */
+    interface PrivateKeyReader {
+        /**
+         *
+         * @param privateKey the plain key
+         * @return {@code true} if this reader can use such format
+         */
+        boolean accept(String privateKey) throws IOException;
+
+        /**
+         *
+         * @param privateKey the plain key in the dedicated format
+         * @return the comverted key format to openSSH
+         */
+        String toOpenSSH(String privateKey, Secret passphrase) throws IOException;
+    }
 
 }
