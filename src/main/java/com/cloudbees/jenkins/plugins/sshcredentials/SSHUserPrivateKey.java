@@ -26,6 +26,8 @@ package com.cloudbees.jenkins.plugins.sshcredentials;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.util.Secret;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 import java.io.IOException;
 import java.util.List;
@@ -71,6 +73,7 @@ public interface SSHUserPrivateKey extends SSHUser {
      * Some key can be stored in another format such PuttyKey.
      * we do expect other format than Putty but how knows...
      */
+    @Restricted(NoExternalUse.class)
     interface PrivateKeyReader {
         /**
          *
