@@ -153,15 +153,11 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             List<String> privateKeys = new ArrayList<>();
             for (String privateKey : privateKeySource.getPrivateKeys()) {
                 try {
-                    boolean accepted = false;
                     for (PrivateKeyReader reader : ExtensionList.lookup(PrivateKeyReader.class)) {
                         if(reader.accept(privateKey)) {
                             privateKeys.add(reader.toOpenSSH(privateKey, passphrase));
-                            accepted = true;
+                            continue;
                         }
-                    }
-                    if (accepted){
-                        continue;
                     }
                     privateKeys.add(privateKey.endsWith("\n") ? privateKey : privateKey + "\n");
 
