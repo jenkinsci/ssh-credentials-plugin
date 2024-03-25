@@ -153,14 +153,16 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             List<String> privateKeys = new ArrayList<>();
             for (String privateKey : privateKeySource.getPrivateKeys()) {
                 try {
+                    // we have only one extension of this type and we want to make it optional
+                    // sadly cannot use lookupSingleton or this means catching an exception instead of a simple null check
                     for (PrivateKeyReader reader : ExtensionList.lookup(PrivateKeyReader.class)) {
-                        if(reader.accept(privateKey)) {
-                            privateKeys.add(reader.toOpenSSH(privateKey, passphrase));
-                            continue;
+                        String key = reader.toOpenSSH(privateKey, passphrase);
+                        if(key != null) {
+                            privateKeys.add(key);
+                            break;
                         }
                     }
                     privateKeys.add(privateKey.endsWith("\n") ? privateKey : privateKey + "\n");
-
                 } catch (IOException e) {
                     // ignore
                 }

@@ -75,17 +75,11 @@ public interface SSHUserPrivateKey extends SSHUser {
      */
     @Restricted(NoExternalUse.class)
     interface PrivateKeyReader {
-        /**
-         *
-         * @param privateKey the plain key
-         * @return {@code true} if this reader can use such format
-         */
-        boolean accept(String privateKey) throws IOException;
 
         /**
          *
          * @param privateKey the plain key in the dedicated format
-         * @return the comverted key format to openSSH
+         * @return the converted key format to openSSH or {@code null} if the reader cannot use such format
          */
         String toOpenSSH(String privateKey, Secret passphrase) throws IOException;
     }
