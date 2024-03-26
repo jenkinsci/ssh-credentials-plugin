@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
@@ -150,24 +151,9 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         }
         long lastModified = privateKeySource.getPrivateKeysLastModified();
         if (privateKeys == null || privateKeys.isEmpty() || lastModified > privateKeysLastModified) {
-            List<String> privateKeys = new ArrayList<>();
-            for (String privateKey : privateKeySource.getPrivateKeys()) {
-                try {
-                    // we have only one extension of this type and we want to make it optional
-                    // sadly cannot use lookupSingleton or this means catching an exception instead of a simple null check
-                    for (PrivateKeyReader reader : ExtensionList.lookup(PrivateKeyReader.class)) {
-                        String key = reader.toOpenSSH(privateKey, passphrase);
-                        if(key != null) {
-                            privateKeys.add(key);
-                            break;
-                        }
-                    }
-                    privateKeys.add(privateKey.endsWith("\n") ? privateKey : privateKey + "\n");
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
-            this.privateKeys = privateKeys;
+            this.privateKeys = privateKeySource.getPrivateKeys().stream()
+                    .map(privateKey -> privateKey.endsWith("\n") ? privateKey : privateKey + "\n")
+                    .collect(Collectors.toList());
             this.privateKeysLastModified = lastModified;
         }
         return privateKeys;

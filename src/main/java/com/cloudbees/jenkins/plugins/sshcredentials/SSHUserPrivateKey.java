@@ -69,19 +69,4 @@ public interface SSHUserPrivateKey extends SSHUser {
     @NonNull
     List<String> getPrivateKeys();
 
-    /**
-     * Some key can be stored in another format such PuttyKey.
-     * we do expect other format than Putty but how knows...
-     */
-    @Restricted(NoExternalUse.class)
-    interface PrivateKeyReader {
-
-        /**
-         *
-         * @param privateKey the plain key in the dedicated format
-         * @return the converted key format to openSSH or {@code null} if the reader cannot use such format
-         */
-        String toOpenSSH(String privateKey, Secret passphrase) throws IOException;
-    }
-
 }
