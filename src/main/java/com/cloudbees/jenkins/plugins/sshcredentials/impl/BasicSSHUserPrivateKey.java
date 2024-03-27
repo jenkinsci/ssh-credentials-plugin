@@ -36,7 +36,6 @@ import hudson.util.Secret;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -44,15 +43,12 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import jenkins.model.Jenkins;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.jenkins.ui.icon.Icon;
-import org.jenkins.ui.icon.IconSet;
-import org.jenkins.ui.icon.IconType;
-import org.kohsuke.putty.PuTTYKey;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
@@ -154,24 +150,9 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         }
         long lastModified = privateKeySource.getPrivateKeysLastModified();
         if (privateKeys == null || privateKeys.isEmpty() || lastModified > privateKeysLastModified) {
-            List<String> privateKeys = new ArrayList<>();
-            for (String privateKey : privateKeySource.getPrivateKeys()) {
-                try {
-                    if (PuTTYKey.isPuTTYKeyFile(new StringReader(privateKey))) {
-                        // strictly we should be encrypting the openssh version with the passphrase, but
-                        // if the key we pass back does not have a passphrase, then the passphrase will not be
-                        // checked, so not an issue.
-                        privateKeys.add(new PuTTYKey(new StringReader(privateKey),
-                                passphrase == null ? "" : passphrase.getPlainText())
-                                .toOpenSSH());
-                    } else {
-                        privateKeys.add(privateKey.endsWith("\n") ? privateKey : privateKey + "\n");
-                    }
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
-            this.privateKeys = privateKeys;
+            this.privateKeys = privateKeySource.getPrivateKeys().stream()
+                    .map(privateKey -> privateKey.endsWith("\n") ? privateKey : privateKey + "\n")
+                    .collect(Collectors.toList());
             this.privateKeysLastModified = lastModified;
         }
         return privateKeys;

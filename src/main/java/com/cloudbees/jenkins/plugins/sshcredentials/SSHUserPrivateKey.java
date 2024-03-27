@@ -26,7 +26,6 @@ package com.cloudbees.jenkins.plugins.sshcredentials;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.util.Secret;
-
 import java.util.List;
 
 /**
