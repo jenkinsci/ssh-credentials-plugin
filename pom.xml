@@ -100,6 +100,22 @@
     </dependencies>
   </dependencyManagement>
 
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.jenkins-ci.tools</groupId>
+          <artifactId>maven-hpi-plugin</artifactId>
+          <configuration>
+            <!-- Compatible since is used to warn users about removal of not anymore supported PuTTy key format
+             -->
+            <compatibleSinceVersion>334.v7732563deee1</compatibleSinceVersion>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
   <dependencies>
     <!-- plugin dependencies -->
     <dependency>
