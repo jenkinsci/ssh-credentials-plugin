@@ -36,6 +36,9 @@ import hudson.util.Secret;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
+import java.security.interfaces.RSAPrivateKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,7 +48,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import jenkins.bouncycastle.api.PEMEncodable;
 import jenkins.model.Jenkins;
+import jenkins.security.FIPS140;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -60,6 +65,8 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
      * Ensure consistent serialization.
      */
     private static final long serialVersionUID = 1L;
+
+    private static final Logger LOGGER = Logger.getLogger(BasicSSHUserPrivateKey.class.getName());
 
     /**
      * The password.
@@ -101,6 +108,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         super(scope, id, username, description);
         this.privateKeySource = privateKeySource == null ? new DirectEntryPrivateKeySource("") : privateKeySource;
         this.passphrase = fixEmpty(passphrase == null ? null : Secret.fromString(passphrase));
+        checkKeyFipsCompliance(privateKeySource, this.passphrase);
     }
 
     private static Secret fixEmpty(Secret secret) {
@@ -109,6 +117,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
 
     @Override
     protected synchronized Object readResolve() {
+        checkKeyFipsCompliance(privateKeySource, passphrase);
         if (privateKeySource == null) {
             Secret passphrase = getPassphrase();
             if (privateKeys != null) {
@@ -169,6 +178,49 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
     @CheckForNull
     public Secret getPassphrase() {
         return passphrase;
+    }
+
+    /**
+     * Checks if provided key is compliant with FIPS 140-2.
+     * OpenSSH keys are not compliant (OpenSSH private key format ultimately contains a private key encrypted with a
+     * non-standard version of PBKDF2 that uses bcrypt as its core hash function, also the structure that contains the key is not ASN.1.)
+     * Only Ed25519 or RSA (with a minimum size of 1024, as it's used for identification, not signing) keys are accepted.
+     * Method will log and launch an {@link IllegalArgumentException} if key is not compliant.
+     * @param privateKeySource the keySource
+     * @param passphrase the secret used with the key (null if no secret provided)
+     */
+    private static void checkKeyFipsCompliance(PrivateKeySource privateKeySource, Secret passphrase) {
+        if (!FIPS140.useCompliantAlgorithms()) {
+            return; // maintain existing behaviour if not in FIPS mode
+        }
+        if (privateKeySource == null || privateKeySource.getPrivateKeys().isEmpty()) {
+            return;
+        }
+        try {
+            char[] pass = passphrase == null ? null : passphrase.getPlainText().toCharArray();
+            PEMEncodable pem = PEMEncodable.decode(privateKeySource.getPrivateKeys().get(0), pass);
+            PrivateKey privateKey = pem.toPrivateKey();
+            if (privateKey == null) {
+                LOGGER.log(Level.WARNING, "Private key can not be obtained from provided data.");
+                throw new IllegalArgumentException("Private key can not be obtained from provided data.");
+            }
+            if (privateKey instanceof RSAPrivateKey) {
+                if (((RSAPrivateKey) privateKey).getModulus().bitLength() < 1024) {
+                    LOGGER.log(Level.WARNING, "Key size below 1024 for RSA keys is not accepted in FIPS mode.");
+                    throw new IllegalArgumentException("Key size below 1024 for RSA keys is not accepted in FIPS mode.");
+                }
+            } else if (!"Ed25519".equals(privateKey.getAlgorithm())) {
+                // Using algorithm name to check elliptic curve, as EdECPrivateKey is not available in jdk11
+                LOGGER.log(Level.WARNING, String.format("Key algorithm %s is not accepted in FIPS mode.", privateKey.getAlgorithm()));
+                throw new IllegalArgumentException(String.format("Key algorithm %s is not accepted in FIPS mode.", privateKey.getAlgorithm()));
+            }
+        } catch (IOException ex) { // OpenSSH keys will raise this
+            LOGGER.log(Level.WARNING, "Provided private key is not FIPS compliant.");
+            throw new IllegalArgumentException("Provided private key is not FIPS compliant.");
+        } catch (UnrecoverableKeyException ex) {
+            LOGGER.log(Level.WARNING, "Key can not be recovered (possibly wrong passphrase?).");
+            throw new IllegalArgumentException("Key can not be recovered (possibly wrong passphrase?).");
+        }
     }
 
     /**
