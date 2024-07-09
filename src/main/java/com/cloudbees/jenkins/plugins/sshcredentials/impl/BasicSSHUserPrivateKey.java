@@ -29,9 +29,12 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
+import hudson.RelativePath;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
+import hudson.model.Item;
 import hudson.model.Items;
+import hudson.util.FormValidation;
 import hudson.util.Secret;
 import java.io.File;
 import java.io.IOException;
@@ -54,7 +57,13 @@ import jenkins.security.FIPS140;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.bouncycastle.asn1.ASN1ParsingException;
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.Stapler;
+import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * A simple username / password for use with SSH connections.
@@ -108,7 +117,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         super(scope, id, username, description);
         this.privateKeySource = privateKeySource == null ? new DirectEntryPrivateKeySource("") : privateKeySource;
         this.passphrase = fixEmpty(passphrase == null ? null : Secret.fromString(passphrase));
-        checkKeyFipsCompliance(privateKeySource, this.passphrase);
+        checkKeyFipsCompliance(this.privateKeySource.getPrivateKeys().get(0), this.passphrase);
     }
 
     private static Secret fixEmpty(Secret secret) {
@@ -117,7 +126,6 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
 
     @Override
     protected synchronized Object readResolve() {
-        checkKeyFipsCompliance(privateKeySource, passphrase);
         if (privateKeySource == null) {
             Secret passphrase = getPassphrase();
             if (privateKeys != null) {
@@ -139,6 +147,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                     getDescription()
             );
         }
+        checkKeyFipsCompliance(privateKeySource.getPrivateKeys().get(0), passphrase);
         if (passphrase != null && fixEmpty(passphrase) == null) {
             return new BasicSSHUserPrivateKey(
                     getScope(),
@@ -189,16 +198,16 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
      * @param privateKeySource the keySource
      * @param passphrase the secret used with the key (null if no secret provided)
      */
-    private static void checkKeyFipsCompliance(PrivateKeySource privateKeySource, Secret passphrase) {
+    private static void checkKeyFipsCompliance(String privateKeySource, Secret passphrase) {
         if (!FIPS140.useCompliantAlgorithms()) {
             return; // maintain existing behaviour if not in FIPS mode
         }
-        if (privateKeySource == null || privateKeySource.getPrivateKeys().isEmpty()) {
+        if (privateKeySource == null || StringUtils.isBlank(privateKeySource)) {
             return;
         }
         try {
             char[] pass = passphrase == null ? null : passphrase.getPlainText().toCharArray();
-            PEMEncodable pem = PEMEncodable.decode(privateKeySource.getPrivateKeys().get(0), pass);
+            PEMEncodable pem = PEMEncodable.decode(privateKeySource, pass);
             PrivateKey privateKey = pem.toPrivateKey();
             if (privateKey == null) {
                 LOGGER.log(Level.WARNING, "Private key can not be obtained from provided data.");
@@ -219,7 +228,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             throw new IllegalArgumentException("Provided private key is not FIPS compliant.");
         } catch (UnrecoverableKeyException ex) {
             LOGGER.log(Level.WARNING, "Key can not be recovered (possibly wrong passphrase?).");
-            throw new IllegalArgumentException("Key can not be recovered (possibly wrong passphrase?).");
+            throw new ASN1ParsingException("Key can not be recovered (possibly wrong passphrase?).");
         }
     }
 
@@ -247,6 +256,14 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          */
         public String getIconClassName() {
             return "symbol-fingerprint";
+        }
+
+        @RequirePOST
+        public FormValidation doCheckPassphrase(@QueryParameter String passphrase,
+                                                @QueryParameter String privateKey,
+                                                @QueryParameter String privateKeySource) {
+
+            return FormValidation.ok("ok");
         }
     }
 
@@ -358,6 +375,22 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             @Override
             public String getDisplayName() {
                 return Messages.BasicSSHUserPrivateKey_DirectEntryPrivateKeySourceDisplayName();
+            }
+
+            @RequirePOST
+            public FormValidation doCheckPrivateKey(@QueryParameter String privateKey,
+                                                    @RelativePath("..") @QueryParameter String passphrase) {
+                try {
+                    checkKeyFipsCompliance(privateKey, Secret.fromString(passphrase));
+                } catch (ASN1ParsingException ex) {
+                    // At this point might not have the passphrase, so if key is cyphered we won't be able to read it.
+                    // Then, if getting this exception it means key is cyphered, so we can not validate it yet
+                    return FormValidation.ok();
+                } catch (IllegalArgumentException ex) {
+                    // Key could be read, this is a legit validation error
+                    return FormValidation.error(ex.getMessage());
+                }
+                return FormValidation.ok();
             }
         }
     }
