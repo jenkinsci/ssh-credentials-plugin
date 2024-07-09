@@ -29,12 +29,9 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
-import hudson.RelativePath;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
-import hudson.model.Item;
 import hudson.model.Items;
-import hudson.util.FormValidation;
 import hudson.util.Secret;
 import java.io.File;
 import java.io.IOException;
@@ -57,13 +54,7 @@ import jenkins.security.FIPS140;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.bouncycastle.asn1.ASN1ParsingException;
-import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * A simple username / password for use with SSH connections.
@@ -195,6 +186,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
      * non-standard version of PBKDF2 that uses bcrypt as its core hash function, also the structure that contains the key is not ASN.1.)
      * Only Ed25519 or RSA (with a minimum size of 1024, as it's used for identification, not signing) keys are accepted.
      * Method will log and launch an {@link IllegalArgumentException} if key is not compliant.
+     * This method could be invoked when doing form validation once https://issues.jenkins.io/browse/JENKINS-73404 is done
      * @param privateKeySource the keySource
      * @param passphrase the secret used with the key (null if no secret provided)
      */
@@ -209,7 +201,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             char[] pass = passphrase == null ? null : passphrase.getPlainText().toCharArray();
             PEMEncodable pem = PEMEncodable.decode(privateKeySource, pass);
             PrivateKey privateKey = pem.toPrivateKey();
-            if (privateKey == null) {
+            if (privateKey == null) { //somehow malformed key or unknown algorithm
                 LOGGER.log(Level.WARNING, "Private key can not be obtained from provided data.");
                 throw new IllegalArgumentException("Private key can not be obtained from provided data.");
             }
@@ -228,7 +220,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             throw new IllegalArgumentException("Provided private key is not FIPS compliant.");
         } catch (UnrecoverableKeyException ex) {
             LOGGER.log(Level.WARNING, "Key can not be recovered (possibly wrong passphrase?).");
-            throw new ASN1ParsingException("Key can not be recovered (possibly wrong passphrase?).");
+            throw new IllegalArgumentException("Key can not be recovered (possibly wrong passphrase?).");
         }
     }
 
@@ -256,14 +248,6 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
          */
         public String getIconClassName() {
             return "symbol-fingerprint";
-        }
-
-        @RequirePOST
-        public FormValidation doCheckPassphrase(@QueryParameter String passphrase,
-                                                @QueryParameter String privateKey,
-                                                @QueryParameter String privateKeySource) {
-
-            return FormValidation.ok("ok");
         }
     }
 
@@ -375,22 +359,6 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             @Override
             public String getDisplayName() {
                 return Messages.BasicSSHUserPrivateKey_DirectEntryPrivateKeySourceDisplayName();
-            }
-
-            @RequirePOST
-            public FormValidation doCheckPrivateKey(@QueryParameter String privateKey,
-                                                    @RelativePath("..") @QueryParameter String passphrase) {
-                try {
-                    checkKeyFipsCompliance(privateKey, Secret.fromString(passphrase));
-                } catch (ASN1ParsingException ex) {
-                    // At this point might not have the passphrase, so if key is cyphered we won't be able to read it.
-                    // Then, if getting this exception it means key is cyphered, so we can not validate it yet
-                    return FormValidation.ok();
-                } catch (IllegalArgumentException ex) {
-                    // Key could be read, this is a legit validation error
-                    return FormValidation.error(ex.getMessage());
-                }
-                return FormValidation.ok();
             }
         }
     }
