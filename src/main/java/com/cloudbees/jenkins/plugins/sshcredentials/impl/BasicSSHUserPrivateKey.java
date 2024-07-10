@@ -206,25 +206,25 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             PEMEncodable pem = PEMEncodable.decode(privateKeySource, pass);
             PrivateKey privateKey = pem.toPrivateKey();
             if (privateKey == null) { //somehow malformed key or unknown algorithm
-                LOGGER.log(Level.WARNING, "Private key can not be obtained from provided data.");
-                throw new IllegalArgumentException("Private key can not be obtained from provided data.");
+                LOGGER.log(Level.WARNING, Messages.BasicSSHUserPrivateKey_UnknownAlgorithmFIPS());
+                throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_UnknownAlgorithmFIPS());
             }
             if (privateKey instanceof RSAPrivateKey) {
                 if (((RSAPrivateKey) privateKey).getModulus().bitLength() < 1024) {
-                    LOGGER.log(Level.WARNING, "Key size below 1024 for RSA keys is not accepted in FIPS mode.");
-                    throw new IllegalArgumentException("Key size below 1024 for RSA keys is not accepted in FIPS mode.");
+                    LOGGER.log(Level.WARNING, Messages.BasicSSHUserPrivateKey_InvalidKeySizeFIPS());
+                    throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_InvalidKeySizeFIPS());
                 }
             } else if (!"Ed25519".equals(privateKey.getAlgorithm())) {
                 // Using algorithm name to check elliptic curve, as EdECPrivateKey is not available in jdk11
-                LOGGER.log(Level.WARNING, String.format("Key algorithm %s is not accepted in FIPS mode.", privateKey.getAlgorithm()));
-                throw new IllegalArgumentException(String.format("Key algorithm %s is not accepted in FIPS mode.", privateKey.getAlgorithm()));
+                LOGGER.log(Level.WARNING, Messages.BasicSSHUserPrivateKey_InvalidAlgorithmFIPS(privateKey.getAlgorithm()));
+                throw new IllegalArgumentException( Messages.BasicSSHUserPrivateKey_InvalidAlgorithmFIPS(privateKey.getAlgorithm()));
             }
         } catch (IOException ex) { // OpenSSH keys will raise this
-            LOGGER.log(Level.WARNING, "Provided private key is not FIPS compliant.");
-            throw new IllegalArgumentException("Provided private key is not FIPS compliant.");
+            LOGGER.log(Level.WARNING, Messages.BasicSSHUserPrivateKey_InvalidKeyFormatFIPS());
+            throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_InvalidKeyFormatFIPS());
         } catch (UnrecoverableKeyException ex) {
-            LOGGER.log(Level.WARNING, "Key can not be recovered (possibly wrong passphrase?).");
-            throw new IllegalArgumentException("Key can not be recovered (possibly wrong passphrase?).");
+            LOGGER.log(Level.WARNING, Messages.BasicSSHUserPrivateKey_WrongPassphraseFIPS());
+            throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_WrongPassphraseFIPS());
         }
     }
 
