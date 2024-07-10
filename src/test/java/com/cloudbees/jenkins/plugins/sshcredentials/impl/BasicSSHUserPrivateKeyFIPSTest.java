@@ -9,21 +9,17 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import hudson.security.ACL;
 import jenkins.security.FIPS140;
 import org.apache.commons.io.FileUtils;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.FlagRule;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.jvnet.hudson.test.WithoutJenkins;
 import org.jvnet.hudson.test.recipes.LocalData;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
-import java.security.Security;
 import java.util.Iterator;
 
 import static org.junit.Assert.*;
@@ -35,17 +31,8 @@ public class BasicSSHUserPrivateKeyFIPSTest {
 
     @Rule public JenkinsRule r = new JenkinsRule();
 
-    @BeforeClass
-    public static void ensureBCIsAvailable() {
-        // Tests running without jenkins need the provider
-        if (Security.getProvider("BC") == null) {
-            Security.insertProviderAt(new BouncyCastleProvider(), 1);
-        }
-    }
-
     @Test
     @Issue("JENKINS-73408")
-    @WithoutJenkins
     public void nonCompliantKeysLaunchExceptionTest() throws IOException {
         assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "rsa512", "user",
                 getKey("rsa512"), "password", "Invalid size key"));
