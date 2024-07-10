@@ -203,6 +203,10 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         }
         try {
             char[] pass = passphrase == null ? null : passphrase.getPlainText().toCharArray();
+            if (pass == null || pass.length < 14) {
+                LOGGER.log(Level.WARNING, Messages.BasicSSHUserPrivateKey_TooShortPassphraseFIPS());
+                throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_TooShortPassphraseFIPS());
+            }
             PEMEncodable pem = PEMEncodable.decode(privateKeySource, pass);
             PrivateKey privateKey = pem.toPrivateKey();
             if (privateKey == null) { //somehow malformed key or unknown algorithm

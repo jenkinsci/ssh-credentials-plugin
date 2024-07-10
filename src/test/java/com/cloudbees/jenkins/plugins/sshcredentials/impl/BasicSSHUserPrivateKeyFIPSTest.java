@@ -35,25 +35,27 @@ public class BasicSSHUserPrivateKeyFIPSTest {
     @Issue("JENKINS-73408")
     public void nonCompliantKeysLaunchExceptionTest() throws IOException {
         assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "rsa512", "user",
-                getKey("rsa512"), "password", "Invalid size key"));
+                getKey("rsa512"), "fipsvalidpassword", "Invalid size key"));
         assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "openssh-rsa1024", "user",
-                getKey("openssh-rsa1024"), "password", "Invalid key format"));
+                getKey("openssh-rsa1024"), "fipsvalidpassword", "Invalid key format"));
         new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "ed25519", "user",
-                getKey("ed25519"), "password", "Elliptic curve accepted key");
-        new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "rsa1024", "user",
-                getKey("rsa1024"), "password", "RSA 1024 accepted key");
-        new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "unencrypted-rsa1024", "user",
-                getKey("unencrypted-rsa1024"), null, "RSA 1024 with no encryption accepted key");
+                getKey("ed25519"), "fipsvalidpassword", "Elliptic curve accepted key");
+        new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "rsa1024-short-pass", "user",
+                getKey("rsa1024"), "fipsvalidpassword", "RSA 1024 accepted key");
         assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "rsa1024", "user",
-                getKey("rsa1024"), "NOT-password", "Wrong password avoids getting size or algorithm"));
+                getKey("unencrypted-rsa1024"), "password", "password shorter than 14 chatacters is invalid"));
+        assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "unencrypted-rsa1024", "user",
+                getKey("unencrypted-rsa1024"), null, "RSA 1024 with no encryption is invalid"));
+        assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "rsa1024", "user",
+                getKey("rsa1024"), "NOT-fipsvalidpassword", "Wrong password avoids getting size or algorithm"));
         assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "dsa2048", "user",
-                getKey("dsa2048"), null, "DSA is not accepted"));
+                getKey("dsa2048"), "fipsvalidpassword", "DSA is not accepted"));
     }
 
     @Test
     @Issue("JENKINS-73408")
     public void invalidKeyIsNotSavedInFIPSModeTest() throws IOException {
-        BasicSSHUserPrivateKey entry = new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "rsa1024", "user", getKey("rsa1024"), "password", "RSA 1024 accepted key");
+        BasicSSHUserPrivateKey entry = new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "rsa1024", "user", getKey("rsa1024"), "fipsvalidpassword", "RSA 1024 accepted key");
         Iterator<CredentialsStore> stores = CredentialsProvider.lookupStores(r.jenkins).iterator();
         assertTrue(stores.hasNext());
         CredentialsStore store = stores.next();
@@ -65,7 +67,7 @@ public class BasicSSHUserPrivateKeyFIPSTest {
                 CredentialsMatchers.withId("rsa1024"));
         assertNotNull(cred);
         assertThrows(IllegalArgumentException.class, () -> store.addCredentials(Domain.global(),
-                new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "rsa512", "user", getKey("rsa512"), "password", "Invalid size key")));
+                new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "rsa512", "user", getKey("rsa512"), "fipsvalidpassword", "Invalid size key")));
         store.save();
         // Invalid key threw an exception, so it wasn't saved
         cred = CredentialsMatchers.firstOrNull(
