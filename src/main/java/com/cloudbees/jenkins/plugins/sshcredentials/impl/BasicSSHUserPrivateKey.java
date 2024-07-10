@@ -29,9 +29,11 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.DescriptorExtensionList;
 import hudson.Extension;
+import hudson.RelativePath;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Items;
+import hudson.util.FormValidation;
 import hudson.util.Secret;
 import java.io.File;
 import java.io.IOException;
@@ -55,6 +57,8 @@ import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 
 /**
  * A simple username / password for use with SSH connections.
@@ -359,6 +363,18 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             @Override
             public String getDisplayName() {
                 return Messages.BasicSSHUserPrivateKey_DirectEntryPrivateKeySourceDisplayName();
+            }
+
+            @RequirePOST
+            public FormValidation doCheckPrivateKey (@QueryParameter String privateKey,
+                                                     @RelativePath("..") @QueryParameter String passphrase) {
+                try {
+                    checkKeyFipsCompliance(privateKey, Secret.fromString(passphrase));
+                    return FormValidation.ok();
+                } catch (IllegalArgumentException ex) {
+                    return FormValidation.error(ex.getMessage());
+                }
+
             }
         }
     }
