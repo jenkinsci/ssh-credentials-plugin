@@ -198,7 +198,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         if (!FIPS140.useCompliantAlgorithms()) {
             return; // maintain existing behaviour if not in FIPS mode
         }
-        if (privateKeySource == null || StringUtils.isBlank(privateKeySource)) {
+        if (StringUtils.isBlank(privateKeySource)) {
             return;
         }
         try {
