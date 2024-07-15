@@ -376,7 +376,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                     checkKeyFipsCompliance(privateKey, Secret.fromString(passphrase));
                     return FormValidation.ok();
                 } catch (IllegalArgumentException ex) {
-                    return FormValidation.error(ex.getMessage());
+                    return FormValidation.error(ex, ex.getMessage());
                 }
 
             }
