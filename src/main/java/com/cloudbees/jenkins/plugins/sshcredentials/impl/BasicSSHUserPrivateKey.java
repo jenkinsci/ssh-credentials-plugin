@@ -70,8 +70,6 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
      */
     private static final long serialVersionUID = 1L;
 
-    private static final Logger LOGGER = Logger.getLogger(BasicSSHUserPrivateKey.class.getName());
-
     /**
      * The password.
      */
@@ -189,7 +187,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
      * OpenSSH keys are not compliant (OpenSSH private key format ultimately contains a private key encrypted with a
      * non-standard version of PBKDF2 that uses bcrypt as its core hash function, also the structure that contains the key is not ASN.1.)
      * Only Ed25519 or RSA (with a minimum size of 1024, as it's used for identification, not signing) keys are accepted.
-     * Method will log and launch an {@link IllegalArgumentException} if key is not compliant.
+     * Method will throw an {@link IllegalArgumentException} if key is not compliant.
      * This method could be invoked when doing form validation once https://issues.jenkins.io/browse/JENKINS-73404 is done
      * @param privateKeySource the keySource
      * @param passphrase the secret used with the key (null if no secret provided)
@@ -204,31 +202,25 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         try {
             char[] pass = passphrase == null ? null : passphrase.getPlainText().toCharArray();
             if (pass == null || pass.length < 14) {
-                LOGGER.log(Level.WARNING, Messages.BasicSSHUserPrivateKey_TooShortPassphraseFIPS());
                 throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_TooShortPassphraseFIPS());
             }
             PEMEncodable pem = PEMEncodable.decode(privateKeySource, pass);
             PrivateKey privateKey = pem.toPrivateKey();
             if (privateKey == null) { //somehow malformed key or unknown algorithm
-                LOGGER.log(Level.WARNING, Messages.BasicSSHUserPrivateKey_UnknownAlgorithmFIPS());
                 throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_UnknownAlgorithmFIPS());
             }
             if (privateKey instanceof RSAPrivateKey) {
                 if (((RSAPrivateKey) privateKey).getModulus().bitLength() < 1024) {
-                    LOGGER.log(Level.WARNING, Messages.BasicSSHUserPrivateKey_InvalidKeySizeFIPS());
                     throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_InvalidKeySizeFIPS());
                 }
             } else if (!"Ed25519".equals(privateKey.getAlgorithm())) {
                 // Using algorithm name to check elliptic curve, as EdECPrivateKey is not available in jdk11
-                LOGGER.log(Level.WARNING, Messages.BasicSSHUserPrivateKey_InvalidAlgorithmFIPS(privateKey.getAlgorithm()));
                 throw new IllegalArgumentException( Messages.BasicSSHUserPrivateKey_InvalidAlgorithmFIPS(privateKey.getAlgorithm()));
             }
         } catch (IOException ex) { // OpenSSH keys will raise this
-            LOGGER.log(Level.WARNING, Messages.BasicSSHUserPrivateKey_InvalidKeyFormatFIPS());
             throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_InvalidKeyFormatFIPS());
         } catch (UnrecoverableKeyException ex) {
-            LOGGER.log(Level.WARNING, Messages.BasicSSHUserPrivateKey_WrongPassphraseFIPS());
-            throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_WrongPassphraseFIPS());
+            throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_KeyParseErrorFIP(ex.getLocalizedMessage()));
         }
     }
 
