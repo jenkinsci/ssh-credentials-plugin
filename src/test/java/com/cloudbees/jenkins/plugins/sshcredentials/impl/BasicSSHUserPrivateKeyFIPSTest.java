@@ -34,6 +34,8 @@ public class BasicSSHUserPrivateKeyFIPSTest {
     @Test
     @Issue("JENKINS-73408")
     public void nonCompliantKeysLaunchExceptionTest() throws IOException {
+        new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "no-key", "user",
+                null, null, "no key provided doesn't throw exceptions");
         assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "rsa512", "user",
                 getKey("rsa512"), "fipsvalidpassword", "Invalid size key"));
         assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "openssh-rsa1024", "user",
@@ -44,12 +46,18 @@ public class BasicSSHUserPrivateKeyFIPSTest {
                 getKey("rsa1024"), "fipsvalidpassword", "RSA 1024 accepted key");
         assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "rsa1024", "user",
                 getKey("unencrypted-rsa1024"), "password", "password shorter than 14 chatacters is invalid"));
-        assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "unencrypted-rsa1024", "user",
-                getKey("unencrypted-rsa1024"), null, "RSA 1024 with no encryption is invalid"));
+        new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "unencrypted-rsa1024", "user",
+                getKey("unencrypted-rsa1024"), null, "RSA 1024 with no encryption is valid");
         assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "rsa1024", "user",
                 getKey("rsa1024"), "NOT-fipsvalidpassword", "Wrong password avoids getting size or algorithm"));
         assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "dsa2048", "user",
                 getKey("dsa2048"), "fipsvalidpassword", "DSA is not accepted"));
+        assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "not-a-key", "user",
+                getKey("not-a-key"), "fipsvalidpassword", "Provided data is not a key"));
+        new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "nopass-openssh-ed25519", "user",
+                getKey("openssh-ed25519-nopass"), null, "openssh ED25519 with no encryption is accepted");
+        new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "nopass-openssh-rsa1024", "user",
+                getKey("openssh-rsa1024-nopass"), null, "openssh rsa >= 1024 with no encryption is accepted");
     }
 
     @Test
