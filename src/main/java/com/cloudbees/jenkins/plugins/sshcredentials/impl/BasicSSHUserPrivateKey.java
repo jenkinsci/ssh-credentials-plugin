@@ -229,7 +229,8 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                 throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_InvalidKeyFormatFIPS(ex.getLocalizedMessage()), ex);
             }
         } catch (UnrecoverableKeyException ex) {
-            throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_KeyParseErrorFIPS(ex.getLocalizedMessage()), ex);
+            String errorMessage = ex.getLocalizedMessage() == null ? "wrong passphrase" : ex.getLocalizedMessage();
+            throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_KeyParseErrorFIPS(errorMessage), ex);
         }
     }
 
