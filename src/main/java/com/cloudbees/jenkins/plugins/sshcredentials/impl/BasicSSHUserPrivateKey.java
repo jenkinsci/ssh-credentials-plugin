@@ -38,6 +38,7 @@ import hudson.util.Secret;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.StringReader;
 import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
 import java.security.interfaces.RSAPrivateKey;
@@ -56,6 +57,12 @@ import jenkins.security.FIPS140;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
+import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.crypto.util.OpenSSHPrivateKeyUtil;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
@@ -110,7 +117,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         super(scope, id, username, description);
         this.privateKeySource = privateKeySource == null ? new DirectEntryPrivateKeySource("") : privateKeySource;
         this.passphrase = fixEmpty(passphrase == null ? null : Secret.fromString(passphrase));
-        checkKeyFipsCompliance(this.privateKeySource.getPrivateKeys().get(0), this.passphrase);
+        checkKeyFipsCompliance(this.privateKeySource.getPrivateKeys().isEmpty() ? "" : this.privateKeySource.getPrivateKeys().get(0), this.passphrase);
     }
 
     private static Secret fixEmpty(Secret secret) {
@@ -140,7 +147,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                     getDescription()
             );
         }
-        checkKeyFipsCompliance(privateKeySource.getPrivateKeys().get(0), passphrase);
+        checkKeyFipsCompliance(this.privateKeySource.getPrivateKeys().isEmpty() ? "" : privateKeySource.getPrivateKeys().get(0), passphrase);
         if (passphrase != null && fixEmpty(passphrase) == null) {
             return new BasicSSHUserPrivateKey(
                     getScope(),
@@ -184,7 +191,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
 
     /**
      * Checks if provided key is compliant with FIPS 140-2.
-     * OpenSSH keys are not compliant (OpenSSH private key format ultimately contains a private key encrypted with a
+     * OpenSSH encrypted keys are not compliant (OpenSSH private key format ultimately contains a private key encrypted with a
      * non-standard version of PBKDF2 that uses bcrypt as its core hash function, also the structure that contains the key is not ASN.1.)
      * Only Ed25519 or RSA (with a minimum size of 1024, as it's used for identification, not signing) keys are accepted.
      * Method will throw an {@link IllegalArgumentException} if key is not compliant.
@@ -201,7 +208,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         }
         try {
             char[] pass = passphrase == null ? null : passphrase.getPlainText().toCharArray();
-            if (pass == null || pass.length < 14) {
+            if (pass != null && pass.length < 14) {
                 throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_TooShortPassphraseFIPS());
             }
             PEMEncodable pem = PEMEncodable.decode(privateKeySource, pass);
@@ -215,13 +222,41 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                 }
             } else if (!"Ed25519".equals(privateKey.getAlgorithm())) {
                 // Using algorithm name to check elliptic curve, as EdECPrivateKey is not available in jdk11
-                throw new IllegalArgumentException( Messages.BasicSSHUserPrivateKey_InvalidAlgorithmFIPS(privateKey.getAlgorithm()));
+                throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_InvalidAlgorithmFIPS(privateKey.getAlgorithm()));
             }
-        } catch (IOException ex) { // OpenSSH keys will raise this
-            throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_InvalidKeyFormatFIPS());
+        } catch (IOException ex) { // OpenSSH keys will raise this, so we need to check if it's a valid openssh key
+            if (!checkValidOpenSshKey(privateKeySource)) {
+                throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_InvalidKeyFormatFIPS(ex.getLocalizedMessage()), ex);
+            }
         } catch (UnrecoverableKeyException ex) {
-            throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_KeyParseErrorFIP(ex.getLocalizedMessage()));
+            throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_KeyParseErrorFIPS(ex.getLocalizedMessage()), ex);
         }
+    }
+
+    /**
+     * Unencrypted OpenSSH keys will be FIPS compliant with same criteria as open ssl ones: RSA > 1024 or ED25519.
+     * This method will check if the provided key is a FIPS approved key, and throw {@link IllegalArgumentException} if not.
+     * @param privateKey the key, no passphrase required as only unencrypted keys will be processed
+     * @return true if key is valid, false if not (provided key is not in PEM) or throwing an exception if key
+     */
+    private static boolean checkValidOpenSshKey(@NonNull String privateKey) {
+        try {
+            PemObject pemObject = new PemReader(new StringReader(privateKey)).readPemObject();
+            if (pemObject == null) {
+                return false; // Object can not be read, so continue with previous exception
+            }
+            AsymmetricKeyParameter params = OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(pemObject.getContent());
+            if (params instanceof RSAPrivateCrtKeyParameters) {
+                if (((RSAPrivateCrtKeyParameters) params).getModulus().bitLength() < 1024) {
+                    throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_InvalidKeySizeFIPS());
+                }
+            } else if (!(params instanceof Ed25519PrivateKeyParameters)) {
+                throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_InvalidAlgorithmFIPS(params.getClass().getSimpleName()));
+            }
+        }catch (IOException | IllegalStateException ex) {
+            throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_InvalidKeyFormatFIPS(ex.getLocalizedMessage()), ex);
+        }
+        return true;
     }
 
     /**
