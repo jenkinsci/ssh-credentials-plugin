@@ -36,6 +36,8 @@ public class BasicSSHUserPrivateKeyFIPSTest {
     public void nonCompliantKeysLaunchExceptionTest() throws IOException {
         new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "no-key", "user",
                 null, null, "no key provided doesn't throw exceptions");
+        assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "nopass-openssh-ed25519", "user",
+                getKey("openssh-ed25519-nopass"), null, "openssh ED25519 with no encryption is not compliant"));
         assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "rsa1024", "user",
                 getKey("rsa1024"), "fipsvalidpassword", "Invalid size key"));
         assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "openssh-rsa1024", "user",
@@ -54,10 +56,6 @@ public class BasicSSHUserPrivateKeyFIPSTest {
                 getKey("dsa2048"), "fipsvalidpassword", "DSA is not accepted"));
         assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "not-a-key", "user",
                 getKey("not-a-key"), "fipsvalidpassword", "Provided data is not a key"));
-        new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "nopass-openssh-ed25519", "user",
-                getKey("openssh-ed25519-nopass"), null, "openssh ED25519 with no encryption is accepted");
-        new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "nopass-openssh-rsa2048", "user",
-                getKey("openssh-rsa2048-nopass"), null, "openssh rsa >= 2048 with no encryption is accepted");
     }
 
     @Test
