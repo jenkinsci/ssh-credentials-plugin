@@ -193,7 +193,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
      * Checks if provided key is compliant with FIPS 140-2.
      * OpenSSH encrypted keys are not compliant (OpenSSH private key format ultimately contains a private key encrypted with a
      * non-standard version of PBKDF2 that uses bcrypt as its core hash function, also the structure that contains the key is not ASN.1.)
-     * Only Ed25519 or RSA (with a minimum size of 1024, as it's used for identification, not signing) keys are accepted.
+     * Only Ed25519 or RSA (with a minimum size of 2048) keys are accepted.
      * Method will throw an {@link IllegalArgumentException} if key is not compliant.
      * This method could be invoked when doing form validation once https://issues.jenkins.io/browse/JENKINS-73404 is done
      * @param privateKeySource the keySource
@@ -217,7 +217,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                 throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_UnknownAlgorithmFIPS());
             }
             if (privateKey instanceof RSAPrivateKey) {
-                if (((RSAPrivateKey) privateKey).getModulus().bitLength() < 1024) {
+                if (((RSAPrivateKey) privateKey).getModulus().bitLength() < 2048) {
                     throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_InvalidKeySizeFIPS());
                 }
             } else if (!"Ed25519".equals(privateKey.getAlgorithm())) {
@@ -248,7 +248,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
             }
             AsymmetricKeyParameter params = OpenSSHPrivateKeyUtil.parsePrivateKeyBlob(pemObject.getContent());
             if (params instanceof RSAPrivateCrtKeyParameters) {
-                if (((RSAPrivateCrtKeyParameters) params).getModulus().bitLength() < 1024) {
+                if (((RSAPrivateCrtKeyParameters) params).getModulus().bitLength() < 2048) {
                     throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_InvalidKeySizeFIPS());
                 }
             } else if (!(params instanceof Ed25519PrivateKeyParameters)) {
