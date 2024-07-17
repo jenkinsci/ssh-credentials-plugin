@@ -221,6 +221,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                     throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_InvalidKeySizeFIPS());
                 }
             } else if (!"Ed25519".equals(privateKey.getAlgorithm())) {
+                // TODO: update this to use the JDK17 support when available in the plugin baseline
                 // Using algorithm name to check elliptic curve, as EdECPrivateKey is not available in jdk11
                 throw new IllegalArgumentException(Messages.BasicSSHUserPrivateKey_InvalidAlgorithmFIPS(privateKey.getAlgorithm()));
             }
