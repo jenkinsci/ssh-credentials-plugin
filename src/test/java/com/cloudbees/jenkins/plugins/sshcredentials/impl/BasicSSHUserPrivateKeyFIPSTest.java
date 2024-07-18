@@ -6,9 +6,12 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.CredentialsStore;
 import com.cloudbees.plugins.credentials.domains.Domain;
+import hudson.ExtensionList;
 import hudson.security.ACL;
+import hudson.util.FormValidation;
 import jenkins.security.FIPS140;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -94,6 +97,16 @@ public class BasicSSHUserPrivateKeyFIPSTest {
                 CredentialsProvider.lookupCredentialsInItem(SSHUserPrivateKey.class, null, ACL.SYSTEM2),
                 CredentialsMatchers.withId("invalid-rsa-key"));
         assertNull(cred);
+    }
+
+    @Test
+    @Issue("JENKINS-73408")
+    public void formValidationTest() throws IOException {
+        BasicSSHUserPrivateKey.DirectEntryPrivateKeySource.DescriptorImpl descriptor = ExtensionList.lookupSingleton(BasicSSHUserPrivateKey.DirectEntryPrivateKeySource.DescriptorImpl.class);
+        FormValidation result = descriptor.doCheckPrivateKey(getKey("rsa2048").getPrivateKey().getPlainText(), "fipsvalidpassword");
+        assertTrue(StringUtils.isBlank(result.getMessage()));
+        result = descriptor.doCheckPrivateKey(getKey("rsa1024").getPrivateKey().getPlainText(), "fipsvalidpassword");
+        assertTrue(StringUtils.isNotBlank(result.getMessage()));
     }
 
     private BasicSSHUserPrivateKey.DirectEntryPrivateKeySource getKey(String file) throws IOException {
