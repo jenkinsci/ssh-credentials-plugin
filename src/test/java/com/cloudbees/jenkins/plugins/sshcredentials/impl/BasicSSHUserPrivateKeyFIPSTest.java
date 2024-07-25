@@ -9,15 +9,13 @@ import com.cloudbees.plugins.credentials.domains.Domain;
 import hudson.ExtensionList;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
-import jenkins.security.FIPS140;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.jvnet.hudson.test.FlagRule;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.RealJenkinsRule;
 import org.jvnet.hudson.test.recipes.LocalData;
 
 import java.io.IOException;
@@ -29,14 +27,16 @@ import static org.junit.Assert.*;
 
 public class BasicSSHUserPrivateKeyFIPSTest {
 
-    @ClassRule
-    public static FlagRule<String> fipsFlag = FlagRule.systemProperty(FIPS140.class.getName() + ".COMPLIANCE", "true");
-
-    @Rule public JenkinsRule r = new JenkinsRule();
+    @Rule public RealJenkinsRule rule = new RealJenkinsRule().omitPlugins("eddsa-api", "trilead-api")
+            .javaOptions("-Djenkins.security.FIPS140.COMPLIANCE=true");
 
     @Test
     @Issue("JENKINS-73408")
-    public void nonCompliantKeysLaunchExceptionTest() throws IOException {
+    public void nonCompliantKeysLaunchExceptionTest() throws Throwable {
+        rule.then(BasicSSHUserPrivateKeyFIPSTest::checkNonCompliantKeysLaunchException);
+    }
+
+    private static void checkNonCompliantKeysLaunchException(JenkinsRule r) throws IOException{
         new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "no-key", "user",
                 null, null, "no key provided doesn't throw exceptions");
         assertThrows(IllegalArgumentException.class, () -> new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "nopass-openssh-ed25519", "user",
@@ -63,7 +63,11 @@ public class BasicSSHUserPrivateKeyFIPSTest {
 
     @Test
     @Issue("JENKINS-73408")
-    public void invalidKeyIsNotSavedInFIPSModeTest() throws IOException {
+    public void invalidKeyIsNotSavedInFIPSModeTest() throws Throwable {
+        rule.then(BasicSSHUserPrivateKeyFIPSTest::checkInvalidKeyIsNotSavedInFIPSMode);
+    }
+
+    private static void checkInvalidKeyIsNotSavedInFIPSMode(JenkinsRule r) throws IOException {
         BasicSSHUserPrivateKey entry = new BasicSSHUserPrivateKey(CredentialsScope.GLOBAL, "rsa2048", "user", getKey("rsa2048"), "fipsvalidpassword", "RSA 1024 accepted key");
         Iterator<CredentialsStore> stores = CredentialsProvider.lookupStores(r.jenkins).iterator();
         assertTrue(stores.hasNext());
@@ -84,11 +88,14 @@ public class BasicSSHUserPrivateKeyFIPSTest {
                 CredentialsMatchers.withId("rsa1024"));
         assertNull(cred);
     }
-
     @Test
     @LocalData
     @Issue("JENKINS-73408")
-    public void invalidKeysAreRemovedOnStartupTest() {
+    public void invalidKeysAreRemovedOnStartupTest() throws Throwable {
+        rule.then(BasicSSHUserPrivateKeyFIPSTest::checkInvalidKeysAreRemovedOnStartup);
+    }
+
+    private static void checkInvalidKeysAreRemovedOnStartup(JenkinsRule r) {
         SSHUserPrivateKey cred = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentialsInItem(SSHUserPrivateKey.class, null, ACL.SYSTEM2),
                 CredentialsMatchers.withId("valid-rsa-key"));
@@ -101,7 +108,11 @@ public class BasicSSHUserPrivateKeyFIPSTest {
 
     @Test
     @Issue("JENKINS-73408")
-    public void formValidationTest() throws IOException {
+    public void formValidationTest() throws Throwable {
+        rule.then(BasicSSHUserPrivateKeyFIPSTest::checkFormValidation);
+    }
+
+    private static void checkFormValidation(JenkinsRule r) throws IOException {
         BasicSSHUserPrivateKey.DirectEntryPrivateKeySource.DescriptorImpl descriptor = ExtensionList.lookupSingleton(BasicSSHUserPrivateKey.DirectEntryPrivateKeySource.DescriptorImpl.class);
         FormValidation result = descriptor.doCheckPrivateKey(getKey("rsa2048").getPrivateKey().getPlainText(), "fipsvalidpassword");
         assertTrue(StringUtils.isBlank(result.getMessage()));
@@ -109,7 +120,7 @@ public class BasicSSHUserPrivateKeyFIPSTest {
         assertTrue(StringUtils.isNotBlank(result.getMessage()));
     }
 
-    private BasicSSHUserPrivateKey.DirectEntryPrivateKeySource getKey(String file) throws IOException {
+    private static BasicSSHUserPrivateKey.DirectEntryPrivateKeySource getKey(String file) throws IOException {
         String keyText = FileUtils.readFileToString(Paths.get("src/test/resources/com/cloudbees/jenkins/plugins/sshcredentials/impl/BasicSSHUserPrivateKeyFIPSTest/nonCompliantKeysLaunchExceptionTest").resolve(file).toFile(), Charset.defaultCharset());
         return new BasicSSHUserPrivateKey.DirectEntryPrivateKeySource(keyText);
     }
