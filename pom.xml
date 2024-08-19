@@ -97,7 +97,7 @@
 	<!-- Trilead API upgrade breaks plugin compatibility tests due to poor handling of optional dependencies -->
 	<!-- Do not change this without checking plugin BOM passes with new version -->
 	<!-- https://github.com/jenkinsci/bom/pull/3404 -->
-        <version>3234.v5ca_5154341ef</version>
+        <version>3276.vcd71db_867fb_2</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
