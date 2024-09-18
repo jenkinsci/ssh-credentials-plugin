@@ -160,6 +160,12 @@
       <artifactId>test-harness</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.main</groupId>
+      <artifactId>jenkins-test-harness</artifactId>
+      <version>2270.v87a_0ea_b_54da_0</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 </project>
