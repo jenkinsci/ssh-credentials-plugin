@@ -28,7 +28,7 @@ import static org.junit.Assert.*;
 public class BasicSSHUserPrivateKeyFIPSTest {
 
     @Rule public RealJenkinsRule rule = new RealJenkinsRule().omitPlugins("eddsa-api", "trilead-api")
-            .javaOptions("-Djenkins.security.FIPS140.COMPLIANCE=true");
+            .withFIPSEnabled().javaOptions("-Xms256m");
 
     @Test
     @Issue("JENKINS-73408")
