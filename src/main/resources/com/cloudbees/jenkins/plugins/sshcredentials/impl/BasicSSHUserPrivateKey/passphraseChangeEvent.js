@@ -4,9 +4,9 @@ const passphraseElements = document.getElementsByClassName('sshCredentials_passp
 if (passphraseElements.length > 0) {
 // Failsafe in case there's more than 1 element we'll only use the first one. Should not happen.
     passphraseElements[0].addEventListener("change", event => {
-        var newEvent = new Event("change")
-        const privateKeyElements = document.getElementsByClassName('sshCredentials_privateKey');
-        if (passphraseElements.length > 0) {
+        var newEvent = new Event("change", {"bubbles": true})
+        const privateKeyElements = document.getElementsByName('_.privateKey');
+        if (privateKeyElements.length > 0) {
             privateKeyElements[0].dispatchEvent(newEvent)
         }
     })
