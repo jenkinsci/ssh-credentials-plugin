@@ -71,7 +71,9 @@
 
   <properties>
     <changelist>999999-SNAPSHOT</changelist>
-    <jenkins.version>2.440.3</jenkins.version>
+    <!-- https://www.jenkins.io/doc/developer/plugin-development/choosing-jenkins-baseline/ -->
+    <jenkins.baseline>2.440</jenkins.baseline>
+    <jenkins.version>${jenkins.baseline}.3</jenkins.version>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
   </properties>
 
@@ -92,7 +94,7 @@
     <dependencies>
       <dependency>
         <groupId>io.jenkins.tools.bom</groupId>
-        <artifactId>bom-2.440.x</artifactId>
+        <artifactId>bom-${jenkins.baseline}.x</artifactId>
 	<!-- Last 2.426.x BOM version before a trilead api upgrade -->
 	<!-- Trilead API upgrade breaks plugin compatibility tests due to poor handling of optional dependencies -->
 	<!-- Do not change this without checking plugin BOM passes with new version -->
