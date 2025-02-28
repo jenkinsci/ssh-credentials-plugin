@@ -29,6 +29,7 @@ import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.ResolveWith;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import hudson.model.Descriptor;
 import hudson.util.Secret;
 
 /**
@@ -75,7 +76,12 @@ public class BasicSSHUserPassword extends BaseSSHUser implements SSHUserPassword
 
     @Override
     protected Object readResolve() {
-        UsernamePasswordCredentialsImpl resolved = new UsernamePasswordCredentialsImpl(getScope(), getId(), getDescription(), getUsername(), getPassword().getEncryptedValue());
+        UsernamePasswordCredentialsImpl resolved;
+        try {
+            resolved = new UsernamePasswordCredentialsImpl(getScope(), getId(), getDescription(), getUsername(), getPassword().getEncryptedValue());
+        } catch (Descriptor.FormException e) {
+            throw new RuntimeException(e);
+        }
         resolved.setUsernameSecret(true);
         return resolved;
     }
