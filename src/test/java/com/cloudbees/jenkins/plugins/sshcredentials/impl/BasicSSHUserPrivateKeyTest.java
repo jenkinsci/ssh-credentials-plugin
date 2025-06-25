@@ -98,7 +98,7 @@ public class BasicSSHUserPrivateKeyTest {
                     .withStdin(updateFolder.read())
                     .invokeWithArgs("folder1");
             
-            assertThat(result.stderr(), containsString("user is missing the Overall/RunScripts permission"));
+            assertThat(result.stderr(), containsString("user is missing the Overall/Administer permission"));
             assertThat(result, failedWith(1));
             
             // config file not touched
