@@ -443,7 +443,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
                 return new DirectEntryPrivateKeySource(privateKeyFile);
             }
 
-            Jenkins.get().checkPermission(Jenkins.RUN_SCRIPTS);
+            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
 
             LOGGER.log(Level.INFO, "SECURITY-440: Migrating FileOnMasterPrivateKeySource to DirectEntryPrivateKeySource");
             // read the content of the file and then migrate to Direct
@@ -530,7 +530,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         }
 
         private Object readResolve() {
-            Jenkins.get().checkPermission(Jenkins.RUN_SCRIPTS);
+            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
 
             LOGGER.log(Level.INFO, "SECURITY-440: Migrating UsersPrivateKeySource to DirectEntryPrivateKeySource");
             // read the content of the file and then migrate to Direct
