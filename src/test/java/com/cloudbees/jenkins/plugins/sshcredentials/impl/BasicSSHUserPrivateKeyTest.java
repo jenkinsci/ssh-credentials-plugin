@@ -38,30 +38,37 @@ import hudson.model.Job;
 import hudson.security.ACL;
 import jenkins.model.Jenkins;
 
-import org.junit.Test;
-
 import static hudson.cli.CLICommandInvoker.Matcher.failedWith;
 import static hudson.cli.CLICommandInvoker.Matcher.succeeded;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.*;
-import org.junit.Rule;
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.jvnet.hudson.test.recipes.LocalData;
 
-public class BasicSSHUserPrivateKeyTest {
+@WithJenkins
+class BasicSSHUserPrivateKeyTest {
 
-    final static String TESTKEY_ID = "bc07f814-78bd-4b29-93d4-d25b93285f93";
-    final static String TESTKEY_BEGIN = "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAu1r+HHzmpybc4iwoP5+44FjvcaMkNEWeGQZlmPwLx70XW8+8";
-    final static String TESTKEY_END = "sroT/IHW2jKMD0v8kKLUnKCZYzlw0By7+RvJ8lgzHB0D71f6EC1UWg==\n-----END RSA PRIVATE KEY-----\n";
+    private static final String TESTKEY_ID = "bc07f814-78bd-4b29-93d4-d25b93285f93";
+    private static final String TESTKEY_BEGIN = "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEAu1r+HHzmpybc4iwoP5+44FjvcaMkNEWeGQZlmPwLx70XW8+8";
+    private static final String TESTKEY_END = "sroT/IHW2jKMD0v8kKLUnKCZYzlw0By7+RvJ8lgzHB0D71f6EC1UWg==\n-----END RSA PRIVATE KEY-----\n";
 
-    @Rule public JenkinsRule r = new JenkinsRule();
+    private JenkinsRule r;
+
+    @BeforeEach
+    void setUp(JenkinsRule rule) {
+        r = rule;
+    }
 
     @LocalData
     @Test
-    public void readOldCredentials() {
+    void readOldCredentials() {
         SSHUserPrivateKey supk = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentials(SSHUserPrivateKey.class, Hudson.get(), ACL.SYSTEM,
                         (List<DomainRequirement>)null),
@@ -69,7 +76,7 @@ public class BasicSSHUserPrivateKeyTest {
         assertNotNull(supk);
         List<String> keyList = supk.getPrivateKeys();
         assertNotNull(keyList);
-        assertEquals(keyList.size(), 1);
+        assertEquals(1, keyList.size());
         String privateKey = keyList.get(0);
         assertNotNull(privateKey);
         assertTrue(privateKey.startsWith(TESTKEY_BEGIN));
@@ -77,7 +84,7 @@ public class BasicSSHUserPrivateKeyTest {
     }
 
     @Test
-    public void ensureDirectEntryHasTrailingNewline() {
+    void ensureDirectEntryHasTrailingNewline() {
         String key = (new BasicSSHUserPrivateKey.DirectEntryPrivateKeySource("test")).getPrivateKey().getPlainText();
         assertEquals("test\n", key);
     }
@@ -87,20 +94,20 @@ public class BasicSSHUserPrivateKeyTest {
     @Test
     @LocalData
     @Issue("SECURITY-440")
-    public void userWithoutRunScripts_cannotMigrateDangerousPrivateKeySource() throws Exception {
+    void userWithoutRunScripts_cannotMigrateDangerousPrivateKeySource() throws Exception {
         Folder folder = r.jenkins.createProject(Folder.class, "folder1");
-        
+
         FilePath updateFolder = r.jenkins.getRootPath().child("update_folder.xml");
-        
+
         { // as user with just configure, you cannot migrate
             CLICommandInvoker.Result result = new CLICommandInvoker(r, new UpdateJobCommand())
                     .authorizedTo(Jenkins.READ, Job.READ, Job.CONFIGURE)
                     .withStdin(updateFolder.read())
                     .invokeWithArgs("folder1");
-            
+
             assertThat(result.stderr(), containsString("user is missing the Overall/Administer permission"));
             assertThat(result, failedWith(1));
-            
+
             // config file not touched
             String configFileContent = folder.getConfigFile().asString();
             assertThat(configFileContent, not(containsString("FileOnMasterPrivateKeySource")));
@@ -111,7 +118,7 @@ public class BasicSSHUserPrivateKeyTest {
                     .authorizedTo(Jenkins.ADMINISTER)
                     .withStdin(updateFolder.read())
                     .invokeWithArgs("folder1");
-            
+
             assertThat(result, succeeded());
             String configFileContent = folder.getConfigFile().asString();
             assertThat(configFileContent, containsString("BasicSSHUserPrivateKey"));
