@@ -10,7 +10,6 @@ import hudson.ExtensionList;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
@@ -115,9 +114,9 @@ public class BasicSSHUserPrivateKeyFIPSTest {
     private static void checkFormValidation(JenkinsRule r) throws IOException {
         BasicSSHUserPrivateKey.DirectEntryPrivateKeySource.DescriptorImpl descriptor = ExtensionList.lookupSingleton(BasicSSHUserPrivateKey.DirectEntryPrivateKeySource.DescriptorImpl.class);
         FormValidation result = descriptor.doCheckPrivateKey(getKey("rsa2048").getPrivateKey().getPlainText(), "fipsvalidpassword");
-        assertTrue(StringUtils.isBlank(result.getMessage()));
+        assertNull(result.getMessage());
         result = descriptor.doCheckPrivateKey(getKey("rsa1024").getPrivateKey().getPlainText(), "fipsvalidpassword");
-        assertTrue(StringUtils.isNotBlank(result.getMessage()));
+        assertFalse(result.getMessage().isBlank());
     }
 
     private static BasicSSHUserPrivateKey.DirectEntryPrivateKeySource getKey(String file) throws IOException {

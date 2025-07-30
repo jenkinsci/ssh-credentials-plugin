@@ -55,7 +55,6 @@ import jenkins.model.Jenkins;
 import jenkins.security.FIPS140;
 import net.jcip.annotations.GuardedBy;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
@@ -194,7 +193,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         if (!FIPS140.useCompliantAlgorithms()) {
             return; // maintain existing behaviour if not in FIPS mode
         }
-        if (StringUtils.isBlank(privateKeySource)) {
+        if (privateKeySource == null || privateKeySource.isBlank()) {
             return;
         }
         try {
@@ -313,7 +312,7 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         }
 
         public DirectEntryPrivateKeySource(List<String> privateKeys) {
-            this(StringUtils.join(privateKeys, "\f"));
+            this(String.join("\f", privateKeys));
         }
 
         /**
@@ -323,9 +322,9 @@ public class BasicSSHUserPrivateKey extends BaseSSHUser implements SSHUserPrivat
         @Override
         public List<String> getPrivateKeys() {
             String privateKeys = Secret.toString(privateKey);
-            return StringUtils.isBlank(privateKeys)
+            return privateKeys == null || privateKeys.isBlank()
                     ? Collections.emptyList()
-                    : Arrays.asList(StringUtils.split(privateKeys, "\f"));
+                    : Arrays.asList(privateKeys.split("\f"));
         }
 
         /**
