@@ -6,7 +6,6 @@ import com.cloudbees.plugins.credentials.common.StandardUsernameCredentials;
 import com.cloudbees.plugins.credentials.impl.BaseStandardCredentials;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundSetter;
 
 /**
@@ -45,7 +44,7 @@ public class BaseSSHUser extends BaseStandardCredentials implements SSHUser, Sta
      */
     @NonNull
     public String getUsername() {
-        return StringUtils.isEmpty(username) ? System.getProperty("user.name") : username;
+        return username == null || username.isEmpty() ? System.getProperty("user.name") : username;
     }
 
     @Override
