@@ -33,11 +33,11 @@ import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.util.Secret;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
@@ -48,25 +48,20 @@ import java.util.logging.Logger;
 import static java.lang.reflect.Proxy.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class TrileadSSHPublicKeyAuthenticatorTest {
+@WithJenkins
+class TrileadSSHPublicKeyAuthenticatorTest {
 
     private Connection connection;
     private SSHUserPrivateKey user;
 
-    @Rule public JenkinsRule r = new JenkinsRule();
-    
-    @After
-    public void tearDown() {
-        if (connection != null) {
-            connection.close();
-            connection = null;
-        }
-    }
+    private JenkinsRule r;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp(JenkinsRule rule) {
+        r = rule;
+
         user = new SSHUserPrivateKey() {
 
             @NonNull
@@ -108,27 +103,37 @@ public class TrileadSSHPublicKeyAuthenticatorTest {
             public List<String> getPrivateKeys() {
                 // just want a valid key... I generated this and have thrown it away (other than here)
                 // do not use other than in this test
-                return List.of("-----BEGIN RSA PRIVATE KEY-----\n"
-                        + "MIICWQIBAAKBgQDADDwooNPJNQB4N4bJPiBgq/rkWKMABApX0w4trSkkX5q+l+CL\n"
-                        + "CuddGGAsAu6XPari8v49ipbBmHqRLP9+X3ARGWKU2gDvGTBr99/ReUl2YgVjCwy+\n"
-                        + "KMrGCN7SNTgRo6StwVaPhh6pUpNTQciDe/kOwUnQFWSM6/lwkOD1Uod45wIBIwKB\n"
-                        + "gHi3O8HELVnmzRhdaqphkLHLL/0/B18Ye4epPBy1/JqFPLJQ1kjFBnUIAe/HVCSN\n"
-                        + "KZX30wIcmUZ9GdeYoJiTwsfTy9t2KwHjqrapTfiekVZAW+3iDBqRZMxQ5MoK7b6g\n"
-                        + "w5HrrtrtPfYuAsBnYjIS6qsKAVT3vdolJ5eai/RlPO4LAkEA76YuUozC/dW7Ox+R\n"
-                        + "1Njd6cWJsRVXGemkSYY/rSh0SbfHAebqL/bDg8xXim9UiuD9Hc6md3glHQj6iKvl\n"
-                        + "BxWq4QJBAM0moKiM16WFSFJP1wVDj0Bnx6DkJYSpf5u+C0ghBVoqIYKq6/P/gRE2\n"
-                        + "+ColsLu6AYftaEJVpAgxeTU/IsGoJMcCQHRmqMkCipiMYkFJ2R49cxnGWNJa0ojt\n"
-                        + "03QrQ3/9tNNZQ2dS5sbW8UAEKoURgNW9vMVVvpHMpE/uaw8u65W6ESsCQDTAyjn4\n"
-                        + "VLWIrDJsTTveLCaBFhNt3cMHA45ysnGiF1GzD+5mdzAdITBP9qvAjIgLQjjlRrH4\n"
-                        + "w8eXsXQXjJgyjR0CQHfvhiMPG5pWwmXpsEOFo6GKSvOC/5sNEcnddenuO/2T7WWi\n"
-                        + "o1LQh9naeuX8gti0vNR8+KtMEaIcJJeWnk56AVY=\n"
-                        + "-----END RSA PRIVATE KEY-----\n");
+                return List.of("""
+                        -----BEGIN RSA PRIVATE KEY-----
+                        MIICWQIBAAKBgQDADDwooNPJNQB4N4bJPiBgq/rkWKMABApX0w4trSkkX5q+l+CL
+                        CuddGGAsAu6XPari8v49ipbBmHqRLP9+X3ARGWKU2gDvGTBr99/ReUl2YgVjCwy+
+                        KMrGCN7SNTgRo6StwVaPhh6pUpNTQciDe/kOwUnQFWSM6/lwkOD1Uod45wIBIwKB
+                        gHi3O8HELVnmzRhdaqphkLHLL/0/B18Ye4epPBy1/JqFPLJQ1kjFBnUIAe/HVCSN
+                        KZX30wIcmUZ9GdeYoJiTwsfTy9t2KwHjqrapTfiekVZAW+3iDBqRZMxQ5MoK7b6g
+                        w5HrrtrtPfYuAsBnYjIS6qsKAVT3vdolJ5eai/RlPO4LAkEA76YuUozC/dW7Ox+R
+                        1Njd6cWJsRVXGemkSYY/rSh0SbfHAebqL/bDg8xXim9UiuD9Hc6md3glHQj6iKvl
+                        BxWq4QJBAM0moKiM16WFSFJP1wVDj0Bnx6DkJYSpf5u+C0ghBVoqIYKq6/P/gRE2
+                        +ColsLu6AYftaEJVpAgxeTU/IsGoJMcCQHRmqMkCipiMYkFJ2R49cxnGWNJa0ojt
+                        03QrQ3/9tNNZQ2dS5sbW8UAEKoURgNW9vMVVvpHMpE/uaw8u65W6ESsCQDTAyjn4
+                        VLWIrDJsTTveLCaBFhNt3cMHA45ysnGiF1GzD+5mdzAdITBP9qvAjIgLQjjlRrH4
+                        w8eXsXQXjJgyjR0CQHfvhiMPG5pWwmXpsEOFo6GKSvOC/5sNEcnddenuO/2T7WWi
+                        o1LQh9naeuX8gti0vNR8+KtMEaIcJJeWnk56AVY=
+                        -----END RSA PRIVATE KEY-----
+                        """);
             }
         };
     }
 
+    @AfterEach
+    void tearDown() {
+        if (connection != null) {
+            connection.close();
+            connection = null;
+        }
+    }
+
     @Test
-    public void testAuthenticate() throws Exception {
+    void testAuthenticate() throws Exception {
         Object sshd = newDefaultSshServer();
         Class<?> keyPairProviderClass = newKeyPairProviderClass();
         Object provider = newProvider();
@@ -163,7 +168,7 @@ public class TrileadSSHPublicKeyAuthenticatorTest {
     }
 
     @Test
-    public void testFactory() throws Exception {
+    void testFactory() throws Exception {
         Object sshd = newDefaultSshServer();
         Class<?> keyPairProviderClass = newKeyPairProviderClass();
         Object provider = newProvider();
@@ -196,7 +201,7 @@ public class TrileadSSHPublicKeyAuthenticatorTest {
     }
 
     @Test
-    public void testAltUsername() throws Exception {
+    void testAltUsername() throws Exception {
         Object sshd = newDefaultSshServer();
         Class<?> keyPairProviderClass = newKeyPairProviderClass();
         Object provider = newProvider();
@@ -234,12 +239,12 @@ public class TrileadSSHPublicKeyAuthenticatorTest {
         }
     }
 
-    private Object invoke(Object target, String methodName, Class<?>[] parameterTypes, Object[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    private Object invoke(Object target, String methodName, Class<?>[] parameterTypes, Object[] args) throws Exception {
         return target.getClass().getMethod(methodName, parameterTypes).invoke(target, args);
     }
 
-    private Object newDefaultSshServer() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Object sshd = null;
+    private Object newDefaultSshServer() throws Exception {
+        Object sshd;
         Class<?> sshdClass;
         try {
             sshdClass = Class.forName("org.apache.sshd.SshServer");
@@ -253,7 +258,7 @@ public class TrileadSSHPublicKeyAuthenticatorTest {
         return sshd;
     }
 
-    private Class<?> newKeyPairProviderClass() throws ClassNotFoundException {
+    private Class<?> newKeyPairProviderClass() throws Exception {
         Class<?> keyPairProviderClass;
         try {
             keyPairProviderClass = Class.forName("org.apache.sshd.common.KeyPairProvider");
@@ -264,7 +269,7 @@ public class TrileadSSHPublicKeyAuthenticatorTest {
         return keyPairProviderClass;
     }
 
-    private Object newProvider() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+    private Object newProvider() throws Exception {
         Class<?> providerClass = Class.forName("org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider");
         Object provider = providerClass.getConstructor().newInstance();
         assertNotNull(provider);
@@ -272,7 +277,7 @@ public class TrileadSSHPublicKeyAuthenticatorTest {
         return provider;
     }
 
-    private Class<?> newAuthenticatorClass() throws ClassNotFoundException {
+    private Class<?> newAuthenticatorClass() throws Exception {
         Class<?> authenticatorClass;
         try {
             authenticatorClass = Class.forName("org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator");
@@ -283,7 +288,7 @@ public class TrileadSSHPublicKeyAuthenticatorTest {
         return authenticatorClass;
     }
 
-    private Object newAuthenticator(Class<?> authenticatorClass, final String userName) throws IllegalArgumentException {
+    private Object newAuthenticator(Class<?> authenticatorClass, final String userName) {
         Object authenticator = newProxyInstance(
                 authenticatorClass.getClassLoader(), new Class<?>[]{authenticatorClass},
                 (proxy, method, args) -> method.getName().equals("authenticate") ? userName.equals(args[0]) : null);
@@ -291,8 +296,8 @@ public class TrileadSSHPublicKeyAuthenticatorTest {
         return authenticator;
     }
 
-    private Object newFactory() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        Object factory = null;
+    private Object newFactory() throws Exception {
+        Object factory;
         Class<?> factoryClass;
         try {
             factoryClass = Class.forName("org.apache.sshd.server.auth.UserAuthPublicKey$Factory");
