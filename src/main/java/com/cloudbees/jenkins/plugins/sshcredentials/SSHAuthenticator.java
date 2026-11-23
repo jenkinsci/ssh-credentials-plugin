@@ -46,11 +46,11 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import jenkins.model.Jenkins;
-import jenkins.security.SlaveToMasterCallable;
 import net.jcip.annotations.GuardedBy;
 
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.anyOf;
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.instanceOf;
+import jenkins.agents.AgentToControllerCallable;
 import jenkins.util.JenkinsJVM;
 
 /**
@@ -501,11 +501,7 @@ public abstract class SSHAuthenticator<C, U extends StandardUsernameCredentials>
     /**
      * A callable invoked from the remote agents to retrieve the {@link SSHAuthenticatorFactory} instances.
      */
-    private static class NewInstance extends SlaveToMasterCallable<Collection<SSHAuthenticatorFactory>, IOException> {
-        /**
-         * Standardize serialization.
-         */
-        private static final long serialVersionUID = 1L;
+    private record NewInstance() implements AgentToControllerCallable<Collection<SSHAuthenticatorFactory>, IOException> {
 
         /**
          * {@inheritDoc}
